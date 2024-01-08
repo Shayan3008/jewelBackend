@@ -15,7 +15,11 @@
 	<name>backend</name>
 	<description>Demo project for Spring Boot</description>
 	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>17</java.version>
+		<maven.compiler.release>17</maven.compiler.release>
+		<log4j2.version>2.19.0</log4j2.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -91,6 +95,9 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+					<verbose>true</verbose>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>
