@@ -1,0 +1,13 @@
+[Unit]
+Description=Your Spring Boot Application
+After=network.target
+
+[Service]
+User=your_user
+ExecStart=/usr/bin/java -jar /root/jewelbackend.jar
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

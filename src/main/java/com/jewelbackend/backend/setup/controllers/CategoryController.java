@@ -34,8 +34,9 @@ public class CategoryController {
     @GetMapping("")
     ResponseEntity<CommonResponse<List<CategoryResponseDTO>>> getAllCategories(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        List<CategoryResponseDTO> categoryResponseDTOs = categoryService.getAllCategory(page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "") String search) {
+        List<CategoryResponseDTO> categoryResponseDTOs = categoryService.getAllCategory(page, size,search);
         CommonResponse<List<CategoryResponseDTO>> categoryResponseDtos = new CommonResponse<>("List All Categories",
                 HttpStatus.OK.value(), categoryResponseDTOs,
                 this.categoryService.getDaoFactory().getCategoryDao().count());
@@ -65,8 +66,10 @@ public class CategoryController {
     }
 
     @DeleteMapping("/delete/{id}")
-    Integer deleteCategory(@PathVariable("id") String id) {
+    ResponseEntity<CommonResponse<Integer>> deleteCategory(@PathVariable("id") String id) {
         this.categoryService.deleteCategory(id);
-        return Integer.parseInt(id);
+        return ResponseEntity.ok().body(new CommonResponse<>("Category deleted", 200, Integer.parseInt(id)));
     }
+
+    
 }

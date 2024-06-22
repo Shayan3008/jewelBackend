@@ -1,5 +1,7 @@
 package com.jewelbackend.backend.setup.models;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 
 import com.jewelbackend.backend.common.constants.Constants;
@@ -26,22 +28,48 @@ public class Item {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
-    @Column(name = "ITEM_NAME")
-    String itemName;
+    String karat;
 
-    Integer karat;
-    
     @Column(name = "DESIGN_NO")
     String designNo;
 
     @Column(name = "NET_WEIGHT")
-    Double netWeight;
+    BigDecimal netWeight;
 
-    
+    @Column(name = "REMAINING_NET_WEIGHT")
+    BigDecimal remainingNetWeight;
 
     @Column(name = "ITEM_IMAGE")
     @Lob
     byte[] itemImage;
+
+    String description;
+
+    BigInteger qty;
+
+    @Column(name = "BEEDS_WEIGHT")
+    BigDecimal beedsWeight;
+
+    @Column(name = "BIG_STONE_WEIGHT")
+    BigDecimal bigStoneWeight;
+
+    @Column(name = "SMALL_STONE_QTY")
+    BigInteger smallStoneQty;
+
+    @Column(name = "DIAMOND_QTY")
+    BigInteger diamondQty;
+
+    @Column(name = "DIAMOND_WEIGHT")
+    BigDecimal diamondWeight;
+
+    @Column(name = "MULTI_ITEM")
+    Boolean multiItem;
+
+    @Column(name = "TOTAL_QTY")
+    BigInteger totalQty;
+
+    @Column(name = "TOTAL_MULTI_WEIGHT")
+    BigDecimal totalMultiWeight;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "karigarId", referencedColumnName = "id")
@@ -57,4 +85,5 @@ public class Item {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "item", cascade = CascadeType.ALL)
     List<Invoice> items;
+
 }

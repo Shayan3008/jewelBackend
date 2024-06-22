@@ -1,9 +1,14 @@
 package com.jewelbackend.backend.setup.services;
 
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.jewelbackend.backend.common.config.HelperUtils;
+import com.jewelbackend.backend.common.criteriafilters.CriteriaFilter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,12 +18,12 @@ import com.jewelbackend.backend.auth.JwtAuthConfig;
 import com.jewelbackend.backend.common.exceptions.AlreadyPresentException;
 import com.jewelbackend.backend.common.exceptions.InvalidInputException;
 import com.jewelbackend.backend.common.exceptions.NotPresentException;
-import com.jewelbackend.backend.common.validator.ValidatorFactory;
-import com.jewelbackend.backend.setup.dao.DaoFactory;
+import com.jewelbackend.backend.factorybeans.ValidatorFactory;
+import com.jewelbackend.backend.factorybeans.DaoFactory;
+import com.jewelbackend.backend.factorybeans.MapperFactory;
 import com.jewelbackend.backend.setup.dto.request.KarigarRequestDTO;
 import com.jewelbackend.backend.setup.dto.response.ItemResponseDTO;
 import com.jewelbackend.backend.setup.dto.response.KarigarResponseDTO;
-import com.jewelbackend.backend.setup.mapper.MapperFactory;
 import com.jewelbackend.backend.setup.models.Item;
 import com.jewelbackend.backend.setup.models.Karigar;
 
@@ -26,15 +31,32 @@ import com.jewelbackend.backend.setup.models.Karigar;
 public class KarigarService extends BaseService {
 
     public KarigarService(DaoFactory daoFactory, ValidatorFactory validatorFactory, MapperFactory mapperFactory,
-            AuthenticationManager authenticationManager, JwtAuthConfig jwtAuthConfig) {
+                          AuthenticationManager authenticationManager, JwtAuthConfig jwtAuthConfig) {
         super(daoFactory, validatorFactory, mapperFactory, authenticationManager, jwtAuthConfig);
 
     }
 
-    public List<KarigarResponseDTO> getAllKarigars(int page, int size) {
+    public List<KarigarResponseDTO> getAllKarigarsLOV() {
+
+        var karigar = (List<Karigar>) this.daoFactory.getKarigarDao().findAll();
+        return karigar.stream().map(e -> {
+            KarigarResponseDTO karigarResponseDTO = new KarigarResponseDTO();
+            karigarResponseDTO = getMapperFactory().getKarigarMapper().domainToResponse(e);
+            return karigarResponseDTO;
+        }).collect(Collectors.toList());
+
+    }
+    public List<KarigarResponseDTO> getAllKarigars(int page, int size, String search) throws ParseException {
+        CriteriaFilter<Karigar> criteriaFilter = new CriteriaFilter<>();
         PageRequest pageRequest = PageRequest.of(page, size);
-        Page<Karigar> karigarPage = getDaoFactory().getKarigarDao().findAll(pageRequest);
-        List<Karigar> karigar = karigarPage.getContent();
+        List<Karigar> karigar = new ArrayList<>();
+        if (search.isBlank()) {
+            Page<Karigar> karigarPage = getDaoFactory().getKarigarDao().findAll(pageRequest);
+            karigar = karigarPage.getContent();
+        } else {
+            Map<String,String> map = HelperUtils.listToMap(search);
+            karigar = criteriaFilter.getEntitiesByCriteriaForSearch(Karigar.class, map, getEntityManager(), size, page,new ArrayList<>());
+        }
         return karigar.stream().map(e -> {
             KarigarResponseDTO karigarResponseDTO = new KarigarResponseDTO();
             karigarResponseDTO = getMapperFactory().getKarigarMapper().domainToResponse(e);

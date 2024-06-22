@@ -1,7 +1,9 @@
 package com.jewelbackend.backend.setup.services;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,12 +14,14 @@ import com.jewelbackend.backend.auth.JwtAuthConfig;
 import com.jewelbackend.backend.common.exceptions.AlreadyPresentException;
 import com.jewelbackend.backend.common.exceptions.InvalidInputException;
 import com.jewelbackend.backend.common.exceptions.NotPresentException;
-import com.jewelbackend.backend.common.validator.ValidatorFactory;
-import com.jewelbackend.backend.setup.dao.DaoFactory;
+import com.jewelbackend.backend.factorybeans.ValidatorFactory;
+import com.jewelbackend.backend.factorybeans.DaoFactory;
+import com.jewelbackend.backend.factorybeans.MapperFactory;
 import com.jewelbackend.backend.setup.dto.request.CategoryRequestDTO;
 import com.jewelbackend.backend.setup.dto.response.CategoryResponseDTO;
-import com.jewelbackend.backend.setup.mapper.MapperFactory;
+import com.jewelbackend.backend.setup.dto.response.ItemResponseDTO;
 import com.jewelbackend.backend.setup.models.Category;
+import com.jewelbackend.backend.setup.models.Item;
 import com.jewelbackend.backend.setup.models.MetalType;
 
 @Service
@@ -27,17 +31,35 @@ public class CategoryService extends BaseService {
         super(daoFactory, validatorFactory, mapperFactory, authenticationManager, jwtAuthConfig);
     }
 
-    public List<CategoryResponseDTO> getAllCategory(int page, int size) {
+    public List<CategoryResponseDTO> getAllCategory(int page, int size, String search) {
+        List<Category> categories = null;
         PageRequest pageRequest = PageRequest.of(page, size);
-        Page<Category> categoryPage = getDaoFactory().getCategoryDao().findAll(pageRequest);
-        List<Category> categories = categoryPage.getContent();
-        return categories.stream().map(e -> getMapperFactory().getCategoryMapper().domainToResponse(e)).toList();
+        if (search.isEmpty()) {
+            Page<Category> categoryPage = getDaoFactory().getCategoryDao().findAll(pageRequest);
+            categories = categoryPage.getContent();
+        } else {
+            search = "%" + search + "%";
+            Page<Category> categoryPage = getDaoFactory().getCategoryDao().findByCategoryNameOrMetalName(search,
+                    pageRequest);
+            categories = categoryPage.getContent();
+        }
+        return categories.stream().map(e -> {
+            List<Item> items = e.getItems().stream()
+                    .filter(item -> item != null && item.getRemainingNetWeight() != null && !item.getRemainingNetWeight().setScale(2).equals(BigDecimal.valueOf(0).setScale(2)))
+                    .toList();
+//            List<ItemResponseDTO> itemResponseDTOs = items.stream()
+//                    .map(item -> getMapperFactory().getItemMapper().domainToResponse(item))
+//                    .collect(Collectors.toList());
+            CategoryResponseDTO categoryResponseDTO = getMapperFactory().getCategoryMapper().domainToResponse(e);
+//            categoryResponseDTO.setItemResponseDTOs(itemResponseDTOs);
+            return categoryResponseDTO;
+        }).toList();
     }
 
     public CategoryResponseDTO saveCategory(CategoryRequestDTO categoryRequestDTO)
             throws NotPresentException, InvalidInputException, AlreadyPresentException {
         Optional<MetalType> metalType = getDaoFactory().getMetalTypeDao().findById(categoryRequestDTO.getMetalName());
-        if (!metalType.isPresent()) {
+        if (metalType.isEmpty()) {
             throw new NotPresentException("Metal name is not present");
         }
         Category category = getMapperFactory().getCategoryMapper().requestToDomain(categoryRequestDTO);
@@ -56,16 +78,14 @@ public class CategoryService extends BaseService {
 
     public void deleteCategory(String id) {
         Optional<Category> category = getDaoFactory().getCategoryDao().findById(Integer.parseInt(id));
-        if (category.isPresent()) {
-            getDaoFactory().getCategoryDao().delete(category.get());
-        }
+        category.ifPresent(value -> getDaoFactory().getCategoryDao().delete(value));
     }
 
     public CategoryResponseDTO editCategory(CategoryRequestDTO categoryRequestDTO)
             throws InvalidInputException, AlreadyPresentException {
         Optional<MetalType> metalType = getDaoFactory().getMetalTypeDao()
                 .findById(categoryRequestDTO.getMetalName());
-        if (!metalType.isPresent()) {
+        if (metalType.isEmpty()) {
             throw new InvalidInputException("No valid metal type");
         }
         Category category = getMapperFactory().getCategoryMapper().requestToDomain(categoryRequestDTO);

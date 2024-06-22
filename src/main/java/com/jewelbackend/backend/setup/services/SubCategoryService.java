@@ -8,11 +8,11 @@ import org.springframework.stereotype.Service;
 
 import com.jewelbackend.backend.auth.JwtAuthConfig;
 import com.jewelbackend.backend.common.exceptions.InvalidInputException;
-import com.jewelbackend.backend.common.validator.ValidatorFactory;
-import com.jewelbackend.backend.setup.dao.DaoFactory;
+import com.jewelbackend.backend.factorybeans.ValidatorFactory;
+import com.jewelbackend.backend.factorybeans.DaoFactory;
+import com.jewelbackend.backend.factorybeans.MapperFactory;
 import com.jewelbackend.backend.setup.dto.request.SubCategoryRequestDTO;
 import com.jewelbackend.backend.setup.dto.response.SubCategoryResponseDTO;
-import com.jewelbackend.backend.setup.mapper.MapperFactory;
 import com.jewelbackend.backend.setup.models.Category;
 import com.jewelbackend.backend.setup.models.SubCategory;
 

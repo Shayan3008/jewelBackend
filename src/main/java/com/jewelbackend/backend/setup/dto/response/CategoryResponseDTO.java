@@ -2,7 +2,7 @@ package com.jewelbackend.backend.setup.dto.response;
 
 import java.util.List;
 
-import com.jewelbackend.backend.setup.models.SubCategory;
+
 
 import lombok.Data;
 
@@ -14,7 +14,7 @@ public class CategoryResponseDTO {
 
     Boolean activeFlag;
 
-    List<SubCategory> subCategory;
+    List<ItemResponseDTO> itemResponseDTOs;
 
     String metalName;
 }

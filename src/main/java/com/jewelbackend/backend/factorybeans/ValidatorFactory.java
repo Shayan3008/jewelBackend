@@ -1,5 +1,6 @@
-package com.jewelbackend.backend.common.validator;
+package com.jewelbackend.backend.factorybeans;
 
+import com.jewelbackend.backend.common.validator.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -19,5 +20,8 @@ public class ValidatorFactory {
     CategoryValidator categoryValidator;
 
     @Autowired
-    ItemValidator ItemValidator;
+    com.jewelbackend.backend.common.validator.ItemValidator ItemValidator;
+
+    @Autowired
+    VendorHeaderValidator vendorHeaderValidator;
 }

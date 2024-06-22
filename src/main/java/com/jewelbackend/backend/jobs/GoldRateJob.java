@@ -3,12 +3,11 @@ package com.jewelbackend.backend.jobs;
 import java.time.LocalDate;
 
 import org.apache.logging.log4j.Level;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.jewelbackend.backend.common.config.HelperUtils;
-import com.jewelbackend.backend.setup.dao.DaoFactory;
+import com.jewelbackend.backend.factorybeans.DaoFactory;
 import com.jewelbackend.backend.setup.models.GoldRate;
 
 @Component
@@ -25,7 +24,7 @@ public class GoldRateJob {
         this.daoFactory = daoFactory;
     }
 
-    @Scheduled(fixedDelay = 5000)
+    // @Scheduled(fixedDelay = 5000)
     public void getGoldRate() {
         HelperUtils.logMessage(Level.INFO, "Getting current gold rate");
         LocalDate localDate = LocalDate.now();

@@ -23,5 +23,27 @@ public class InvoiceResponseDto {
 
     BigDecimal making;
 
-    String itemName;
+    String categoryName;
+
+    BigDecimal beadAmount;
+
+    BigDecimal bigStoneAmount;
+
+    BigDecimal smallStoneAmount;
+
+    BigDecimal doliPolish;
+
+    BigDecimal diamondAmount;
+
+    BigDecimal chandiAmount;
+
+    BigDecimal discount;
+
+    String description;
+
+    BigDecimal diamondRate;
+
+    BigDecimal goldRate;
+
+    ItemResponseDTO itemResponseDTO;
 }

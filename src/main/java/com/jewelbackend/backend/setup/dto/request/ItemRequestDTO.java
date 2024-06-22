@@ -1,5 +1,7 @@
 package com.jewelbackend.backend.setup.dto.request;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import lombok.Data;
 
@@ -7,13 +9,13 @@ import lombok.Data;
 public class ItemRequestDTO {
     int id;
 
-    String itemName;
-
-    Integer karat;
+    String karat;
 
     String designNo;
 
-    Double netWeight;
+    BigDecimal netWeight;
+
+    BigDecimal itemWeight;
 
     String itemImage;
 
@@ -22,4 +24,21 @@ public class ItemRequestDTO {
     String metalName;
 
     int categoryId;
+
+    String description;
+
+    BigInteger qty;
+
+    BigDecimal beedsWeight;
+
+    BigDecimal bigStoneWeight;
+
+    BigInteger smallStoneQty;
+
+    BigInteger diamondQty;
+
+    BigDecimal diamondWeight;
+
+
+
 }

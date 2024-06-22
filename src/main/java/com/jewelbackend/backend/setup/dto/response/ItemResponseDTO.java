@@ -1,17 +1,18 @@
 package com.jewelbackend.backend.setup.dto.response;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import lombok.Data;
 
 @Data
 public class ItemResponseDTO {
     int id;
 
-    String itemName;
-
-    Integer karat;
+    String karat;
     String designNo;
 
-    Double netWeight;
+    BigDecimal netWeight;
     String itemImage;
 
     int karigarId;
@@ -20,4 +21,26 @@ public class ItemResponseDTO {
 
     int categoryId;
     String categoryName;
+
+    String description;
+
+    BigInteger qty;
+
+    BigDecimal beedsWeight;
+
+    BigDecimal bigStoneWeight;
+
+    BigInteger smallStoneQty;
+
+    BigInteger diamondQty;
+
+    BigDecimal diamondWeight;
+
+    Boolean multiItem;
+
+    BigInteger totalQty;
+
+    BigDecimal totalMultiWeight;
+
+    BigDecimal remainingNetWeight;
 }

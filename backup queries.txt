@@ -1,0 +1,722 @@
+SELECT  [dt]
+      ,[itemid]
+      ,[tweight]
+      ,[qty]
+      ,[sn]
+      ,[cat]
+      ,[designo]
+      ,[detail]
+      ,[SENDTO]
+  FROM [rjcJeweler].[dbo].[additem]
+
+select cat,itemid,qty,tweight,dt,detail from [rjcJeweler].[dbo].[additem];
+
+select itemid, cat, tweight,Supplier1,karat,qty from [rjcJeweler].[dbo].[GItem];
+
+select * from [rjcJeweler].[dbo].[GItem];
+
+
+select itemid From [rjcJeweler].[dbo].[Golddinvoice]
+
+
+select mak,qty,amt,wastper,gross,totalamt,rate,itemid FROM [rjcJeweler].[dbo].[GDinvoice]; where itemId = '8450';
+
+select * FROM [rjcJeweler].[dbo].[GDinvoice]
+
+select * From [rjcJeweler].[dbo].[cashpay]
+
+
+select * From [rjcJeweler].[dbo].[fc]
+
+select * From [rjcJeweler].[dbo].[rates]
+
+
+select * From [rjcJeweler].[dbo].[CASHPAYREC]
+
+SELECT * FROM [rjcJeweler].[dbo].[Accleger]
+
+SELECT * FROM [rjcJeweler].[dbo].[BILL]
+
+SELECT [date] FROM [rjcJeweler].[dbo].[BILL]
+
+SELECT [descr],clientid,Amt,item,[Weight] FROM [rjcJeweler].[dbo].[BILL]
+SELECT 
+	ABS(Amt) AS AMT,
+	    [Weight],
+		CASE 
+        WHEN CHARINDEX('TOLA', descr) > 0 AND CHARINDEX('Weight', descr) > CHARINDEX('TOLA', descr) + LEN('TOLA') + 1
+        THEN CAST(CAST(SUBSTRING(
+            descr,
+            CHARINDEX('TOLA', descr) + LEN('TOLA') + 1,
+            CHARINDEX('Weight', descr) - CHARINDEX('TOLA', descr) - LEN('TOLA') - 1
+        ) AS DECIMAL(18, 3)) / 11.6638 AS DECIMAL(18, 3))
+        ELSE 0
+    END AS RatePerGram,
+	b.BillDate,
+    [descr],
+	    CASE
+        WHEN (descr LIKE '%TTBAR%' OR descr LIKE '%PURE GOLD%') THEN '24K'
+        WHEN (descr LIKE '%GINNI GOLD%') THEN '22K'
+        ELSE NULL
+    END AS purity,
+    CASE
+        WHEN descr LIKE '%RECEIVED%' THEN 'SALE'
+        WHEN descr LIKE '%PAID%' THEN 'PURCHASE'
+        WHEN descr LIKE '%PURCHASE%' THEN 'PURCHASE'
+        ELSE 'Other'
+    END AS trnType,
+
+	CASE
+		WHEN (descr LIKE '%TTBAR%' OR descr LIKE '%PURE GOLD%' OR descr LIKE '%GINNI GOLD%') THEN 'GOLD'
+        ELSE 'CASH'
+	END AS PAYMENT_METHOD,
+	a.clientid
+FROM 
+    [rjcJeweler].[dbo].[BILL] a JOIN [rjcJeweler].[dbo].[BillMaster] b ON a.billNo = b.BillNo;
+
+SELECT
+    descr,
+	CASE
+		WHEN descr like '%TTBAR%' THEN
+    CAST(CAST(SUBSTRING(
+        descr,
+        CHARINDEX('TOLA', descr) + LEN('TOLA') + 1,
+        CHARINDEX('Weight', descr) - CHARINDEX('TOLA', descr) - LEN('TOLA') - 1
+    )AS DECIMAL(18,3)
+	)/11.6638 AS DECIMAL(18, 3)) AS RatePerGram
+FROM
+    [rjcJeweler].[dbo].[BILL] where descr LIKE '%TTBAR%';
+
+SELECT * FROM [rjcJeweler].[dbo].[LEDGER]
+
+SELECT * FROM [rjcJeweler].[dbo].[billdara]
+
+
+
+
+SELECT * FROM [rjcJeweler].[dbo].[BILL];
+
+select * from [rjcJeweler].[dbo].[BILL] WHERE billNo IN (1,2)
+
+  SELECT * FROM [rjcJeweler].[dbo].[BillMaster] ORDER BY BILLNO;
+
+
+
+
+
+
+
+
+  SELECT 
+    [descr],
+    CASE
+        WHEN descr LIKE '%RECEIVED%' THEN 'SALE'
+        WHEN descr LIKE '%PAID%' THEN 'PURCHASE'
+        WHEN descr LIKE '%PURCHASE%' THEN 'PURCHASE'
+        ELSE 'Other'
+    END AS trnType,
+    CASE
+        WHEN (descr LIKE '%TTBAR%' OR descr LIKE '%PURE GOLD%') THEN '24K'
+        WHEN (descr LIKE '%GINNI GOLD%') THEN '22K'
+        ELSE NULL
+    END AS purity,
+    clientid,
+    NULL AS Amt,  -- NULL for Amount in weight rows
+    [Weight] AS Credit,  -- Weight as Credit in weight rows
+    NULL AS Debit,  -- NULL for Debit in weight rows
+    CASE 
+        WHEN CHARINDEX('TOLA', descr) > 0 AND CHARINDEX('Weight', descr) > CHARINDEX('TOLA', descr) + LEN('TOLA') + 1
+        THEN CAST(CAST(SUBSTRING(
+            descr,
+            CHARINDEX('TOLA', descr) + LEN('TOLA') + 1,
+            CHARINDEX('Weight', descr) - CHARINDEX('TOLA', descr) - LEN('TOLA') - 1
+        ) AS DECIMAL(18, 3)) / 11.6638 AS DECIMAL(18, 3))
+        ELSE NULL
+    END AS RatePerGram
+FROM 
+    [rjcJeweler].[dbo].[BILL]
+WHERE 
+    [Weight] IS NOT NULL
+
+UNION ALL
+
+SELECT 
+    [descr],
+    CASE
+        WHEN descr LIKE '%RECEIVED%' THEN 'SALE'
+        WHEN descr LIKE '%PAID%' THEN 'PURCHASE'
+        WHEN descr LIKE '%PURCHASE%' THEN 'PURCHASE'
+        ELSE 'Other'
+    END AS trnType,
+    CASE
+        WHEN (descr LIKE '%TTBAR%' OR descr LIKE '%PURE GOLD%') THEN '24K'
+        WHEN (descr LIKE '%GINNI GOLD%') THEN '22K'
+        ELSE NULL
+    END AS purity,
+    clientid,
+    ABS(Amt) AS Amt,  -- Ensure Amt is always positive
+    NULL AS Credit,  -- NULL for Credit in amount rows
+    ABS(Amt) AS Debit,  -- Amount as Debit in amount rows
+    CASE 
+        WHEN CHARINDEX('TOLA', descr) > 0 AND CHARINDEX('Weight', descr) > CHARINDEX('TOLA', descr) + LEN('TOLA') + 1
+        THEN CAST(CAST(SUBSTRING(
+            descr,
+            CHARINDEX('TOLA', descr) + LEN('TOLA') + 1,
+            CHARINDEX('Weight', descr) - CHARINDEX('TOLA', descr) - LEN('TOLA') - 1
+        ) AS DECIMAL(18, 3)) / 11.6638 AS DECIMAL(18, 3))
+        ELSE NULL
+    END AS RatePerGram
+FROM 
+    [rjcJeweler].[dbo].[BILL]
+WHERE 
+    Amt IS NOT NULL;
+
+
+
+
+
+SELECT 
+    CASE
+        WHEN descr LIKE '%RECEIVED%' THEN AMT
+        ELSE 0
+    END AS CREDIT,
+	CASE
+		WHEN descr like '%PAID%' OR descr like '%PURCHASE%' THEN AMT 
+		ELSE 0
+	END AS DEBIT,
+    b.BillDate,
+	a.clientid
+FROM 
+    [rjcJeweler].[dbo].[BILL] a join [rjcJeweler].[dbo].[BillMaster] b on
+	a.billNo = b.BillNo
+WHERE 
+    ([Weight] IS NULL OR [WEIGHT] = 0) AND [DESCR]  LIKE '%GOLD%'
+	ORDER BY b.BillDate asc;
+
+SELECT COUNT(*)
+FROM 
+    [rjcJeweler].[dbo].[BILL]
+WHERE 
+    ([Weight] IS NULL OR [WEIGHT] = 0) AND [DESCR] NOT LIKE '%GOLD%'
+
+SELECT COUNT(*), clientid FROM [rjcJeweler].[dbo].[BILL] WHERE (WEIGHT IS NOT NULL AND WEIGHT > 0) group by clientid;
+
+SELECT [descr],
+    CASE
+        WHEN descr LIKE '%RECEIVED%' THEN 'SALE'
+        WHEN descr LIKE '%PAID%' THEN 'PURCHASE'
+        WHEN descr LIKE '%PURCHASE%' THEN 'PURCHASE'
+        ELSE 'Other'
+    END AS trnType,
+    CASE
+        WHEN (descr LIKE '%TTBAR%' OR descr LIKE '%PURE GOLD%') THEN '24K'
+        WHEN (descr LIKE '%GINNI GOLD%') THEN '22K'
+        ELSE NULL
+    END AS purity,
+    clientid,
+    ABS(Amt) AS Amt,  -- Ensure Amt is always positive
+    NULL AS Credit,  -- NULL for Credit in amount rows
+    ABS(Amt) AS Debit,  -- Amount as Debit in amount rows
+    CASE 
+        WHEN CHARINDEX('TOLA', descr) > 0 AND CHARINDEX('Weight', descr) > CHARINDEX('TOLA', descr) + LEN('TOLA') + 1
+        THEN CAST(CAST(SUBSTRING(
+            descr,
+            CHARINDEX('TOLA', descr) + LEN('TOLA') + 1,
+            CHARINDEX('Weight', descr) - CHARINDEX('TOLA', descr) - LEN('TOLA') - 1
+        ) AS DECIMAL(18, 3)) / 11.6638 AS DECIMAL(18, 3))
+        ELSE NULL
+    END AS RatePerGram FROM [rjcJeweler].[dbo].[BILL] WHERE clientid = 'CUS-59' and (WEIGHT IS NOT NULL AND WEIGHT > 0);
+
+SELECT a.clientid,b.billDate,
+	-0.5 AS DEBIT,
+	CASE
+        WHEN descr LIKE '%RECEIVED%' THEN [WEIGHT]
+        ELSE -0.5
+    END AS CREDIT_WEIGHT,
+	-0.5 AS CREDIT,
+	CASE 
+		WHEN descr LIKE '%PAID%' OR descr LIKE '%PURCHASE%' THEN [WEIGHT]
+        ELSE -0.5
+	END AS DEBIT_WEIGHT
+FROM [rjcJeweler].[dbo].[Bill] a join [rjcJeweler].[dbo].[BillMaster] b on a.billNo = b.billNo where [weight] > 0 
+UNION ALL
+SELECT a.clientid,b.billDate,
+CASE
+        WHEN descr LIKE '%RECEIVED%' THEN ABS(AMT)
+        ELSE -0.5
+END AS DEBIT,
+-0.5 AS CREDIT_WEIGHT,
+CASE 
+		WHEN descr LIKE '%PAID%' OR descr LIKE '%PURCHASE%' THEN ABS(AMT)
+        ELSE -0.5
+END AS CREDIT,
+-0.5 AS DEBIT_WEIGHT
+FROM [rjcJeweler].[dbo].[Bill] a join [rjcJeweler].[dbo].[BillMaster] b on a.billNo = b.billNo
+where [weight] > 0;
+
+SELECT COUNT(*) FROM [rjcJeweler].[dbo].[Bill]
+where [weight] > 0;
+
+
+select descr, amt, [weight], clientid from [rjcJeweler].[dbo].[BILL] where descr like '%GOLD%' and [weight] = 0;
+
+
+select status, totalWeight,TotalAmount,opengold,openamt from [rjcJeweler].[dbo].[BillMaster] where ClientId = 'P-1' order by billNo asc;
+
+select * from [rjcJeweler].[dbo].[BILLMASTER] where clientid = 'P-1' order by billno asc;
+
+SELECT a.billNo,b.billDate,descr,b.TotalWeight,b.opengold,b.openamt,b.TotalAmount
+	-0.5 AS DEBIT,
+	CASE
+        WHEN descr LIKE '%RECEIVED%' THEN [WEIGHT]
+        ELSE -0.5
+    END AS CREDIT_WEIGHT,
+	-0.5 AS CREDIT,
+	CASE 
+		WHEN descr LIKE '%PAID%' OR descr LIKE '%PURCHASE%' THEN [WEIGHT]
+        ELSE -0.5
+	END AS DEBIT_WEIGHT
+FROM [rjcJeweler].[dbo].[Bill] a join [rjcJeweler].[dbo].[BillMaster] b on a.billNo = b.billNo where a.clientid = 'P-1' 
+UNION ALL
+SELECT a.billNo,b.billDate,descr,b.TotalWeight,b.opengold,b.openamt,
+CASE
+        WHEN descr LIKE '%RECEIVED%' THEN ABS(AMT)
+        ELSE -0.5
+END AS DEBIT,
+-0.5 AS CREDIT_WEIGHT,
+CASE 
+		WHEN descr LIKE '%PAID%' OR descr LIKE '%PURCHASE%' THEN ABS(AMT)
+        ELSE -0.5
+END AS CREDIT,
+-0.5 AS DEBIT_WEIGHT
+FROM [rjcJeweler].[dbo].[Bill] a join [rjcJeweler].[dbo].[BillMaster] b on a.billNo = b.billNo
+where a.clientid = 'P-1'
+order by a.billNo;
+
+
+
+
+SELECT a.billNo,b.billDate,descr,b.TotalWeight,b.opengold,b.openamt,b.TotalAmount from [rjcJeweler].[dbo].[Bill] a join [rjcJeweler].[dbo].[BillMaster] b 
+on a.BillNo = b.billNo where a.clientid = 'P-1' order by a.billNo asc;
+
+SELECT a.billNo,b.billDate,descr,b.TotalWeight,b.opengold,b.openamt,b.TotalAmount from [rjcJeweler].[dbo].[Bill] a join [rjcJeweler].[dbo].[BillMaster] b 
+on a.BillNo = b.billNo where a.clientid = 'P-1' and descr like '%Purchase%' order by a.billNo asc;
+
+
+SELECT  [dt]
+      ,[itemid]
+      ,[tweight]
+      ,[qty]
+      ,[sn]
+      ,[cat]
+      ,[designo]
+      ,[detail]
+      ,[SENDTO]
+  FROM [rjcJeweler].[dbo].[additem]
+
+select cat,itemid,qty,tweight,dt,detail from [rjcJeweler].[dbo].[additem];
+
+select itemid, cat, tweight,Supplier1,karat,qty from [rjcJeweler].[dbo].[GItem];
+
+select * from [rjcJeweler].[dbo].[GItem];
+
+
+select itemid From [rjcJeweler].[dbo].[Golddinvoice]
+
+
+select dt,mak,qty,amt,wastper,gross,totalamt,rate,itemid FROM [rjcJeweler].[dbo].[GDinvoice]; where itemId = '8450';
+select COUNT(*) FROM [rjcJeweler].[dbo].[GDinvoice];
+
+select * FROM [rjcJeweler].[dbo].[GDinvoice]
+
+select * From [rjcJeweler].[dbo].[cashpay]
+
+
+select * From [rjcJeweler].[dbo].[fc]
+
+select * From [rjcJeweler].[dbo].[rates]
+
+
+select * From [rjcJeweler].[dbo].[CASHPAYREC]
+
+SELECT * FROM [rjcJeweler].[dbo].[Accleger]
+
+SELECT * FROM [rjcJeweler].[dbo].[BILL]
+
+SELECT [date] FROM [rjcJeweler].[dbo].[BILL]
+
+SELECT [descr],clientid,Amt,item,[Weight] FROM [rjcJeweler].[dbo].[BILL]
+SELECT 
+	ABS(Amt) AS AMT,
+	    [Weight],
+		CASE 
+        WHEN CHARINDEX('TOLA', descr) > 0 AND CHARINDEX('Weight', descr) > CHARINDEX('TOLA', descr) + LEN('TOLA') + 1
+        THEN CAST(CAST(SUBSTRING(
+            descr,
+            CHARINDEX('TOLA', descr) + LEN('TOLA') + 1,
+            CHARINDEX('Weight', descr) - CHARINDEX('TOLA', descr) - LEN('TOLA') - 1
+        ) AS DECIMAL(18, 3)) / 11.6638 AS DECIMAL(18, 3))
+        ELSE 0
+    END AS RatePerGram,
+	b.BillDate,
+    [descr],
+	    CASE
+        WHEN (descr LIKE '%TTBAR%' OR descr LIKE '%PURE GOLD%') THEN '24K'
+        WHEN (descr LIKE '%GINNI GOLD%') THEN '22K'
+        ELSE NULL
+    END AS purity,
+    CASE
+        WHEN descr LIKE '%RECEIVED%' THEN 'SALE'
+        WHEN descr LIKE '%PAID%' THEN 'PURCHASE'
+        WHEN descr LIKE '%PURCHASE%' THEN 'PURCHASE'
+        ELSE 'Other'
+    END AS trnType,
+
+	CASE
+		WHEN (descr LIKE '%TTBAR%' OR descr LIKE '%PURE GOLD%' OR descr LIKE '%GINNI GOLD%') THEN 'GOLD'
+        ELSE 'CASH'
+	END AS PAYMENT_METHOD,
+	a.clientid
+FROM 
+    [rjcJeweler].[dbo].[BILL] a JOIN [rjcJeweler].[dbo].[BillMaster] b ON a.billNo = b.BillNo;
+
+SELECT
+    descr,
+	CASE
+		WHEN descr like '%TTBAR%' THEN
+    CAST(CAST(SUBSTRING(
+        descr,
+        CHARINDEX('TOLA', descr) + LEN('TOLA') + 1,
+        CHARINDEX('Weight', descr) - CHARINDEX('TOLA', descr) - LEN('TOLA') - 1
+    )AS DECIMAL(18,3)
+	)/11.6638 AS DECIMAL(18, 3)) AS RatePerGram
+FROM
+    [rjcJeweler].[dbo].[BILL] where descr LIKE '%TTBAR%';
+
+SELECT * FROM [rjcJeweler].[dbo].[LEDGER]
+
+SELECT * FROM [rjcJeweler].[dbo].[billdara]
+
+
+
+
+SELECT * FROM [rjcJeweler].[dbo].[BILL];
+
+select * from [rjcJeweler].[dbo].[BILL] WHERE billNo IN (1,2)
+
+  SELECT * FROM [rjcJeweler].[dbo].[BillMaster] ORDER BY BILLNO;
+
+
+
+
+
+
+
+
+  SELECT 
+    [descr],
+    CASE
+        WHEN descr LIKE '%RECEIVED%' THEN 'SALE'
+        WHEN descr LIKE '%PAID%' THEN 'PURCHASE'
+        WHEN descr LIKE '%PURCHASE%' THEN 'PURCHASE'
+        ELSE 'Other'
+    END AS trnType,
+    CASE
+        WHEN (descr LIKE '%TTBAR%' OR descr LIKE '%PURE GOLD%') THEN '24K'
+        WHEN (descr LIKE '%GINNI GOLD%') THEN '22K'
+        ELSE NULL
+    END AS purity,
+    clientid,
+    NULL AS Amt,  -- NULL for Amount in weight rows
+    [Weight] AS Credit,  -- Weight as Credit in weight rows
+    NULL AS Debit,  -- NULL for Debit in weight rows
+    CASE 
+        WHEN CHARINDEX('TOLA', descr) > 0 AND CHARINDEX('Weight', descr) > CHARINDEX('TOLA', descr) + LEN('TOLA') + 1
+        THEN CAST(CAST(SUBSTRING(
+            descr,
+            CHARINDEX('TOLA', descr) + LEN('TOLA') + 1,
+            CHARINDEX('Weight', descr) - CHARINDEX('TOLA', descr) - LEN('TOLA') - 1
+        ) AS DECIMAL(18, 3)) / 11.6638 AS DECIMAL(18, 3))
+        ELSE NULL
+    END AS RatePerGram
+FROM 
+    [rjcJeweler].[dbo].[BILL]
+WHERE 
+    [Weight] IS NOT NULL
+
+UNION ALL
+
+SELECT 
+    [descr],
+    CASE
+        WHEN descr LIKE '%RECEIVED%' THEN 'SALE'
+        WHEN descr LIKE '%PAID%' THEN 'PURCHASE'
+        WHEN descr LIKE '%PURCHASE%' THEN 'PURCHASE'
+        ELSE 'Other'
+    END AS trnType,
+    CASE
+        WHEN (descr LIKE '%TTBAR%' OR descr LIKE '%PURE GOLD%') THEN '24K'
+        WHEN (descr LIKE '%GINNI GOLD%') THEN '22K'
+        ELSE NULL
+    END AS purity,
+    clientid,
+    ABS(Amt) AS Amt,  -- Ensure Amt is always positive
+    NULL AS Credit,  -- NULL for Credit in amount rows
+    ABS(Amt) AS Debit,  -- Amount as Debit in amount rows
+    CASE 
+        WHEN CHARINDEX('TOLA', descr) > 0 AND CHARINDEX('Weight', descr) > CHARINDEX('TOLA', descr) + LEN('TOLA') + 1
+        THEN CAST(CAST(SUBSTRING(
+            descr,
+            CHARINDEX('TOLA', descr) + LEN('TOLA') + 1,
+            CHARINDEX('Weight', descr) - CHARINDEX('TOLA', descr) - LEN('TOLA') - 1
+        ) AS DECIMAL(18, 3)) / 11.6638 AS DECIMAL(18, 3))
+        ELSE NULL
+    END AS RatePerGram
+FROM 
+    [rjcJeweler].[dbo].[BILL]
+WHERE 
+    Amt IS NOT NULL;
+
+
+
+
+
+SELECT 
+    CASE
+        WHEN descr LIKE '%RECEIVED%' THEN AMT
+        ELSE 0
+    END AS CREDIT,
+	CASE
+		WHEN descr like '%PAID%' OR descr like '%PURCHASE%' THEN AMT 
+		ELSE 0
+	END AS DEBIT,
+    b.BillDate,
+	a.clientid
+FROM 
+    [rjcJeweler].[dbo].[BILL] a join [rjcJeweler].[dbo].[BillMaster] b on
+	a.billNo = b.BillNo
+WHERE 
+    ([Weight] IS NULL OR [WEIGHT] = 0) AND [DESCR]  LIKE '%GOLD%'
+	ORDER BY b.BillDate asc;
+
+SELECT COUNT(*)
+FROM 
+    [rjcJeweler].[dbo].[BILL]
+WHERE 
+    ([Weight] IS NULL OR [WEIGHT] = 0) AND [DESCR] NOT LIKE '%GOLD%'
+
+SELECT COUNT(*), clientid FROM [rjcJeweler].[dbo].[BILL] WHERE (WEIGHT IS NOT NULL AND WEIGHT > 0) group by clientid;
+
+SELECT [descr],
+    CASE
+        WHEN descr LIKE '%RECEIVED%' THEN 'SALE'
+        WHEN descr LIKE '%PAID%' THEN 'PURCHASE'
+        WHEN descr LIKE '%PURCHASE%' THEN 'PURCHASE'
+        ELSE 'Other'
+    END AS trnType,
+    CASE
+        WHEN (descr LIKE '%TTBAR%' OR descr LIKE '%PURE GOLD%') THEN '24K'
+        WHEN (descr LIKE '%GINNI GOLD%') THEN '22K'
+        ELSE NULL
+    END AS purity,
+    clientid,
+    ABS(Amt) AS Amt,  -- Ensure Amt is always positive
+    NULL AS Credit,  -- NULL for Credit in amount rows
+    ABS(Amt) AS Debit,  -- Amount as Debit in amount rows
+    CASE 
+        WHEN CHARINDEX('TOLA', descr) > 0 AND CHARINDEX('Weight', descr) > CHARINDEX('TOLA', descr) + LEN('TOLA') + 1
+        THEN CAST(CAST(SUBSTRING(
+            descr,
+            CHARINDEX('TOLA', descr) + LEN('TOLA') + 1,
+            CHARINDEX('Weight', descr) - CHARINDEX('TOLA', descr) - LEN('TOLA') - 1
+        ) AS DECIMAL(18, 3)) / 11.6638 AS DECIMAL(18, 3))
+        ELSE NULL
+    END AS RatePerGram FROM [rjcJeweler].[dbo].[BILL] WHERE clientid = 'CUS-59' and (WEIGHT IS NOT NULL AND WEIGHT > 0);
+
+SELECT a.clientid,b.billDate,a.billNo,
+	-0.5 AS DEBIT,
+	CASE
+        WHEN descr LIKE '%RECEIVED%' THEN [WEIGHT]
+        ELSE -0.5
+    END AS DEBIT_WEIGHT,
+	-0.5 AS CREDIT,
+	CASE 
+		WHEN descr LIKE '%PAID%' OR descr LIKE '%PURCHASE%' THEN [WEIGHT]
+        ELSE -0.5
+	END AS CREDIT_WEIGHT
+FROM [rjcJeweler].[dbo].[Bill] a join [rjcJeweler].[dbo].[BillMaster] b on a.billNo = b.billNo where [weight] > 0 
+UNION ALL
+SELECT a.clientid,b.billDate,a.billNo,
+CASE
+        WHEN descr LIKE '%RECEIVED%' THEN ABS(AMT)
+        ELSE -0.5
+END AS DEBIT,
+-0.5 AS CREDIT_WEIGHT,
+CASE 
+		WHEN descr LIKE '%PAID%' OR descr LIKE '%PURCHASE%' THEN ABS(AMT)
+        ELSE -0.5
+END AS CREDIT,
+-0.5 AS DEBIT_WEIGHT
+FROM [rjcJeweler].[dbo].[Bill] a join [rjcJeweler].[dbo].[BillMaster] b on a.billNo = b.billNo
+where [weight] > 0 and a.clientId = 'P-1' order by a.billNo;
+
+select * From [rjcJeweler].[dbo].[BillMaster] where clientId = 'P-1' order by billNo;
+
+SELECT COUNT(*) FROM [rjcJeweler].[dbo].[Bill]
+where [weight] > 0 
+
+
+select descr, amt, [weight], clientid from [rjcJeweler].[dbo].[BILL] where descr like '%GOLD%' and [weight] = 0;
+
+
+select status, totalWeight,TotalAmount,opengold,openamt from [rjcJeweler].[dbo].[BillMaster] where ClientId = 'P-1' order by billNo asc;
+
+select * from [rjcJeweler].[dbo].[BILLMASTER] where clientid = 'P-1' order by billno asc;
+
+
+
+
+
+
+SELECT a.billNo,b.billDate,descr,b.TotalWeight,b.opengold,b.openamt,b.TotalAmount
+	-0.5 AS DEBIT,
+	CASE
+        WHEN descr LIKE '%RECEIVED%' THEN [WEIGHT]
+        ELSE -0.5
+    END AS CREDIT_WEIGHT,
+	-0.5 AS CREDIT,
+	CASE 
+		WHEN descr LIKE '%PAID%' OR descr LIKE '%PURCHASE%' THEN [WEIGHT]
+        ELSE -0.5
+	END AS DEBIT_WEIGHT
+FROM [rjcJeweler].[dbo].[Bill] a join [rjcJeweler].[dbo].[BillMaster] b on a.billNo = b.billNo where a.clientid = 'P-1' 
+UNION ALL
+SELECT a.billNo,b.billDate,descr,b.TotalWeight,b.opengold,b.openamt,
+CASE
+        WHEN descr LIKE '%RECEIVED%' THEN ABS(AMT)
+        ELSE -0.5
+END AS DEBIT,
+-0.5 AS CREDIT_WEIGHT,
+CASE 
+		WHEN descr LIKE '%PAID%' OR descr LIKE '%PURCHASE%' THEN ABS(AMT)
+        ELSE -0.5
+END AS CREDIT,
+-0.5 AS DEBIT_WEIGHT
+FROM [rjcJeweler].[dbo].[Bill] a join [rjcJeweler].[dbo].[BillMaster] b on a.billNo = b.billNo
+where a.clientid = 'P-1'
+order by a.billNo;
+
+
+
+
+SELECT a.billNo,b.billDate,descr,b.TotalWeight,b.opengold,b.openamt,b.TotalAmount from [rjcJeweler].[dbo].[Bill] a join [rjcJeweler].[dbo].[BillMaster] b 
+on a.BillNo = b.billNo where a.clientid = 'P-1' order by a.billNo asc;
+
+SELECT a.billNo,b.billDate,descr,b.TotalWeight,b.opengold,b.openamt,b.TotalAmount from [rjcJeweler].[dbo].[Bill] a join [rjcJeweler].[dbo].[BillMaster] b 
+on a.BillNo = b.billNo where a.clientid = 'P-1' and descr like '%Purchase%' order by a.billNo asc;
+
+select descr,
+CASE
+        WHEN descr LIKE '%RECEIVED%' THEN ABS(AMT)
+        ELSE -0.5
+END AS DEBIT,
+-0.5 AS CREDIT_WEIGHT,
+CASE 
+		WHEN descr LIKE '%PAID%' OR descr LIKE '%PURCHASE%' THEN ABS(AMT)
+        ELSE -0.5
+END AS CREDIT
+from
+[rjcJeweler].[dbo].[BILL] a
+join
+[rjcJeweler].[dbo].[BILLMASTER] b 
+on a.billNo = b.BillNo
+where a.clientid = 'P-1' order by a.billno asc;
+
+select descr,TOTALWEIGHT,TOTALAMOUNT,opengold,openamt from 
+[rjcJeweler].[dbo].[BILL] b join
+[rjcJeweler].[dbo].[BILLMASTER] a
+on b.BillNo = a.billNo
+where a.clientid = 'P-1' and descr not like '%PURCHASE%TTBAR%' order by a.billno asc;
+
+select 
+descr,TOTALWEIGHT,TOTALAMOUNT,opengold,openamt from 
+[rjcJeweler].[dbo].[BILL] b join
+[rjcJeweler].[dbo].[BILLMASTER] a
+on b.BillNo = a.billNo
+where a.clientid  not in ('P-1') and descr like '%PURCHASE%TTBAR%' order by a.billno asc;
+
+
+select 
+a.clientid,a.billDate,
+a.TOTALWEIGHT as credit_weight,
+-0.5 as debit_weight,
+-0.5 as credit,
+-0.5 as debit
+from 
+[rjcJeweler].[dbo].[BILL] b join
+[rjcJeweler].[dbo].[BILLMASTER] a
+on b.BillNo = a.billNo
+where a.clientid not in ( 'P-1') and BILLTYPE like 'PURCHASE BILL'
+UNION ALL
+select
+a.clientid,a.billDate,
+-0.5 as credit_weight,
+-0.5 as debit_weight,
+-0.5 as credit,
+TotalAmount as debit
+from 
+[rjcJeweler].[dbo].[BILL] b join
+[rjcJeweler].[dbo].[BILLMASTER] a
+on b.BillNo = a.billNo
+where a.clientid not in ( 'P-1') and BILLTYPE like 'PURCHASE BILL';
+
+
+SELECT CLIENTID, BILLTYPE FROM rjcJeweler.dbo.BillMaster WHERE BILLTYPE like 'PURCHASE BILL' GROUP BY ClientId, BILLTYPE; 
+
+select 
+a.clientid,
+a.billDate,
+CASE 
+		WHEN BILLTYPE LIKE 'RECEIVE BILL' AND ABS(TOTALAMOUNT) > 0 THEN ABS(TotalAmount)
+		WHEN BILLTYPE LIKE 'PAYMENT BILL' THEN -0.5
+        ELSE -0.5
+END AS DEBIT,
+CASE
+        WHEN BILLTYPE LIKE 'RECEIVE BILL' THEN -0.5
+		WHEN BILLTYPE LIKE 'PAYMENT BILL' AND ABS(TOTALAMOUNT) > 0 THEN ABS(TotalAmount)
+        ELSE -0.5
+END AS CREDIT,
+CASE
+        WHEN BILLTYPE LIKE 'RECEIVE BILL' THEN -0.5
+		WHEN BILLTYPE LIKE 'PAYMENT BILL' AND ABS(TotalWeight) > 0 THEN ABS(TotalWeight)
+        ELSE -0.5
+END AS CREDIT_WEIGHT,
+CASE
+        WHEN BILLTYPE LIKE 'RECEIVE BILL' AND ABS(TotalWeight) > 0 THEN ABS(TOTALWEIGHT)
+		WHEN BILLTYPE LIKE 'PAYMENT BILL' THEN -0.5
+        ELSE -0.5
+END AS DEBIT_WEIGHT
+from 
+[rjcJeweler].[dbo].[BILL] b join
+[rjcJeweler].[dbo].[BILLMASTER] a
+on b.BillNo = a.billNo
+where a.clientid not  in ( 'P-1') and  BILLTYPE not like 'PURCHASE BILL' order by a.billNo;
+
+select * from [rjcJeweler].[dbo].[BILL] b join
+[rjcJeweler].[dbo].[BILLMASTER] a
+on b.BillNo = a.billNo where descr like '%Rec Zero%'
+
+select * from [rjcJeweler].[dbo].[BILLMASTER]   order by billno asc;
+
+select * from [rjcJeweler].[dbo].[BILL] b join
+[rjcJeweler].[dbo].[BILLMASTER] a
+on b.BillNo = a.billNo WHERE BILLTYPE = 'PAYMENT BILL' and weight > 0;  
+
+select b.BILLNO,Weight,TotalAmount,openamt,opengold,BILLTYPE from [rjcJeweler].[dbo].[BILL] b join
+[rjcJeweler].[dbo].[BILLMASTER] a
+on b.BillNo = a.billNo WHERE B.billno = ;  
+
+
+ PURCHASE BILL -> GOLD-- CASH = 0
+PAIDBILL -> GOLD = 0 CASH++
+PURCHASEBILL -> GOLD ++ CASH -- 

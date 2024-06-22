@@ -1,6 +1,7 @@
 package com.jewelbackend.backend.setup.services;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -16,37 +17,66 @@ import com.jewelbackend.backend.auth.JwtAuthConfig;
 import com.jewelbackend.backend.common.config.HelperUtils;
 import com.jewelbackend.backend.common.exceptions.InvalidInputException;
 import com.jewelbackend.backend.common.exceptions.NotPresentException;
-import com.jewelbackend.backend.common.validator.ValidatorFactory;
-import com.jewelbackend.backend.setup.dao.DaoFactory;
+import com.jewelbackend.backend.factorybeans.ValidatorFactory;
+import com.jewelbackend.backend.factorybeans.DaoFactory;
+import com.jewelbackend.backend.factorybeans.MapperFactory;
 import com.jewelbackend.backend.setup.dto.request.InvoiceRequestDTO;
 import com.jewelbackend.backend.setup.dto.response.InvoiceResponseDto;
-import com.jewelbackend.backend.setup.mapper.MapperFactory;
+import com.jewelbackend.backend.setup.dto.response.ItemResponseDTO;
+import com.jewelbackend.backend.setup.models.CashBook;
 import com.jewelbackend.backend.setup.models.Invoice;
 import com.jewelbackend.backend.setup.models.Item;
 
 @Service
 public class InvoiceService extends BaseService {
 
+    private final CashBookService cashBookService;
+
     public InvoiceService(DaoFactory daoFactory, ValidatorFactory validatorFactory, MapperFactory mapperFactory,
-            AuthenticationManager authenticationManager, JwtAuthConfig jwtAuthConfig) {
+            AuthenticationManager authenticationManager, JwtAuthConfig jwtAuthConfig,CashBookService cashBookService) {
         super(daoFactory, validatorFactory, mapperFactory, authenticationManager, jwtAuthConfig);
+        this.cashBookService = cashBookService;
     }
 
-    public List<InvoiceResponseDto> findAllInvoices(int page, int size) {
+    public List<InvoiceResponseDto> findAllInvoices(int page, int size, String search) {
         PageRequest pageRequest = PageRequest.of(page, size);
-        Page<Invoice> invoicPage = getDaoFactory().getInvoiceDao().findAll(pageRequest);
-        List<Invoice> invoices = invoicPage.getContent();
-        return invoices.stream().map(e -> getMapperFactory().getInvoiceMapper().domainToResponse(e))
+        List<Invoice> invoices = null;
+        Page<Invoice> invoicPage = null;
+        if (search.isBlank()) {
+
+            invoicPage = getDaoFactory().getInvoiceDao().findAll(pageRequest);
+            invoices = invoicPage.getContent();
+        } else {
+            search = "%" + search + "%";
+            invoicPage = getDaoFactory().getInvoiceDao().findAllByKarigarNameOrCategoryName(search, pageRequest);
+            invoices = invoicPage.getContent();
+        }
+        return invoices.stream().map(e -> {
+            if (e.getItem() == null)
+                return getMapperFactory().getInvoiceMapper().domainToResponse(e);
+            ItemResponseDTO itemResponseDTO = getMapperFactory().getItemMapper().domainToResponse(e.getItem());
+            InvoiceResponseDto invoiceResponseDto = getMapperFactory().getInvoiceMapper().domainToResponse(e);
+            invoiceResponseDto.setItemResponseDTO(itemResponseDTO);
+            return invoiceResponseDto;
+        })
                 .collect(Collectors.toList());
     }
 
     public InvoiceResponseDto saveInvoice(InvoiceRequestDTO invoiceRequestDTO) throws InvalidInputException {
         Invoice invoice = getMapperFactory().getInvoiceMapper().requestToDomain(invoiceRequestDTO);
-        Optional<Item> item = getDaoFactory().getItemDao().findById(invoiceRequestDTO.getItemId());
-        if (item.isEmpty())
+        Optional<Item> optionalItem = getDaoFactory().getItemDao().findById(invoiceRequestDTO.getItemId());
+        if (optionalItem.isEmpty())
             throw new InvalidInputException("Item with id not found");
-        invoice.setItem(item.get());
+        Item item = optionalItem.get();
+        item.setRemainingNetWeight(item.getNetWeight().subtract(invoiceRequestDTO.getItemWeight()));
+        if (item.getQty().compareTo(BigInteger.valueOf(1)) > 0) {
+            BigInteger qty = item.getQty().subtract(BigInteger.valueOf(invoiceRequestDTO.getQty()));
+            item.setQty(qty);
+        }
+        invoice.setItem(item);
         invoice = getDaoFactory().getInvoiceDao().save(invoice);
+        CashBook cashBook = getMapperFactory().getInvoiceMapper().invoiceToCashBook(invoice);
+        this.cashBookService.saveCashBook(cashBook);
         return getMapperFactory().getInvoiceMapper().domainToResponse(invoice);
     }
 
@@ -80,6 +110,15 @@ public class InvoiceService extends BaseService {
             throw new NotPresentException("Rate against this date not present");
         }
         return goldRate.get(0).getPrice();
+
+    }
+
+    public InvoiceResponseDto saveInvoiceWithoutItem(InvoiceRequestDTO invoiceRequestDTO) {
+        Invoice invoice = getMapperFactory().getInvoiceMapper().requestToDomain(invoiceRequestDTO);
+        invoice = getDaoFactory().getInvoiceDao().save(invoice);
+        CashBook cashBook = getMapperFactory().getInvoiceMapper().invoiceToCashBook(invoice);
+        this.cashBookService.saveCashBook(cashBook);
+        return getMapperFactory().getInvoiceMapper().domainToResponse(invoice);
 
     }
 

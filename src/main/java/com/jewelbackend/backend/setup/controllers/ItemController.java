@@ -1,7 +1,11 @@
 package com.jewelbackend.backend.setup.controllers;
 
+import java.text.ParseException;
 import java.util.List;
 
+import com.jewelbackend.backend.common.config.HelperUtils;
+import com.jewelbackend.backend.common.criteriafilters.CriteriaFilter;
+import com.jewelbackend.backend.setup.models.Item;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,11 +37,16 @@ public class ItemController {
     @GetMapping("")
     ResponseEntity<CommonResponse<List<ItemResponseDTO>>> getAllItems(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        List<ItemResponseDTO> itemResponseDTOs = itemService.findAllItems(page, size);
-        
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "") String search) throws ParseException {
+        List<ItemResponseDTO> itemResponseDTOs = itemService.findAllItems(page, size,search);
+        if(!search.isBlank()) {
+            CriteriaFilter<Item> criteriaFilter = new CriteriaFilter<>();
+            Long count = criteriaFilter.getQueryCount(Item.class, HelperUtils.listToMap(search), itemService.getEntityManager());
+            return ResponseEntity.ok().body(new CommonResponse<>("All items", HttpStatus.OK.value(), itemResponseDTOs, count));
+        }
         CommonResponse<List<ItemResponseDTO>> commonResponse = new CommonResponse<>("All items", HttpStatus.OK.value(),
-                itemResponseDTOs,this.itemService.getDaoFactory().getItemDao().count());
+                itemResponseDTOs, this.itemService.getDaoFactory().getItemDao().count());
         return ResponseEntity.status(HttpStatus.OK).body(commonResponse);
     }
 
@@ -46,6 +55,13 @@ public class ItemController {
             throws NotPresentException {
         ItemResponseDTO item = this.itemService.findItemById(id);
         return ResponseEntity.ok().body(new CommonResponse<ItemResponseDTO>("id", 200, item));
+    }
+
+    @GetMapping("/findbycategory/{categoryid}")
+    ResponseEntity<CommonResponse<List<ItemResponseDTO>>> getItemByCategoryId(@PathVariable("categoryid") String categoryId)
+            throws NotPresentException {
+        List<ItemResponseDTO> item = this.itemService.findItemByCategoryCode(Integer.parseInt(categoryId));
+        return ResponseEntity.ok().body(new CommonResponse<>("id", 200, item));
     }
 
     @PostMapping("/save")

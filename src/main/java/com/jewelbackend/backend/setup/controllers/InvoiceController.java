@@ -1,7 +1,6 @@
 package com.jewelbackend.backend.setup.controllers;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -34,10 +33,12 @@ public class InvoiceController {
     @GetMapping("")
     public ResponseEntity<CommonResponse<List<InvoiceResponseDto>>> findAllInvoices(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        List<InvoiceResponseDto> invoiceResponseDtos = this.invoiceService.findAllInvoices(page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "") String search) {
+        List<InvoiceResponseDto> invoiceResponseDtos = this.invoiceService.findAllInvoices(page, size,search);
         return ResponseEntity.ok()
-                .body(new CommonResponse<>("All Invoices", 200, invoiceResponseDtos, invoiceResponseDtos.size()));
+                .body(new CommonResponse<>("All Invoices", 200, invoiceResponseDtos,
+                        invoiceService.getDaoFactory().getInvoiceDao().count()));
     }
 
     @PostMapping("/save")
@@ -67,9 +68,15 @@ public class InvoiceController {
 
     @GetMapping("/getgoldrate")
     public ResponseEntity<CommonResponse<BigDecimal>> getGoldRate(
-        @RequestParam("date") String date
-    ) throws NotPresentException{
+            @RequestParam("date") String date) throws NotPresentException {
         BigDecimal price = this.invoiceService.getGoldRate(date);
-        return ResponseEntity.ok().body(new CommonResponse<>("Gold Rate from "+date, 200, price));
+        return ResponseEntity.ok().body(new CommonResponse<>("Gold Rate from " + date, 200, price));
+    }
+
+    @PostMapping("/savewithoutitem")
+    public ResponseEntity<CommonResponse<InvoiceResponseDto>> saveInvoiceWithoutItem(
+            @RequestBody InvoiceRequestDTO invoiceRequestDTO) {
+        InvoiceResponseDto invoiceResponseDto = this.invoiceService.saveInvoiceWithoutItem(invoiceRequestDTO);
+        return ResponseEntity.ok().body(new CommonResponse<>("Saved invoice", 200, invoiceResponseDto));
     }
 }

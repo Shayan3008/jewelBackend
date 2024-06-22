@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(), null);
 
         // Return a ResponseEntity with CustomErrorResponse as a single object
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.OK).body(errorResponse);
     }
 
     @ExceptionHandler({ Exception.class })

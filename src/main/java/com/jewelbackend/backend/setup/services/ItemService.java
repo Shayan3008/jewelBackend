@@ -1,9 +1,13 @@
 package com.jewelbackend.backend.setup.services;
 
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.jewelbackend.backend.common.config.HelperUtils;
+import com.jewelbackend.backend.common.criteriafilters.CriteriaFilter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -12,11 +16,12 @@ import org.springframework.stereotype.Service;
 import com.jewelbackend.backend.auth.JwtAuthConfig;
 import com.jewelbackend.backend.common.exceptions.InvalidInputException;
 import com.jewelbackend.backend.common.exceptions.NotPresentException;
-import com.jewelbackend.backend.common.validator.ValidatorFactory;
-import com.jewelbackend.backend.setup.dao.DaoFactory;
+import com.jewelbackend.backend.factorybeans.ValidatorFactory;
+import com.jewelbackend.backend.factorybeans.DaoFactory;
+import com.jewelbackend.backend.factorybeans.MapperFactory;
 import com.jewelbackend.backend.setup.dto.request.ItemRequestDTO;
 import com.jewelbackend.backend.setup.dto.response.ItemResponseDTO;
-import com.jewelbackend.backend.setup.mapper.MapperFactory;
+import com.jewelbackend.backend.setup.models.Category;
 import com.jewelbackend.backend.setup.models.Item;
 
 @Service
@@ -27,10 +32,19 @@ public class ItemService extends BaseService {
         super(daoFactory, validatorFactory, mapperFactory, authenticationManager, jwtAuthConfig);
     }
 
-    public List<ItemResponseDTO> findAllItems(int page, int size) {
+    public List<ItemResponseDTO> findAllItems(int page, int size, String search) throws ParseException {
         PageRequest pageRequest = PageRequest.of(page, size);
-        Page<Item> itemPage = getDaoFactory().getItemDao().findAll(pageRequest);
-        List<Item> items = itemPage.getContent();
+        Page<Item> itemPage = null;
+        List<Item> items = null;
+        if (search.isBlank()) {
+
+            itemPage = getDaoFactory().getItemDao().findAll(pageRequest);
+            items = itemPage.getContent();
+        } else {
+            CriteriaFilter<Item> criteriaFilter = new CriteriaFilter<>();
+            items = criteriaFilter.getEntitiesByCriteriaForSearch(Item.class, HelperUtils.listToMap(search), getEntityManager(), size, page,
+                    new ArrayList<>());
+        }
         return items.stream().map(e -> getMapperFactory().getItemMapper().domainToResponse(e))
                 .collect(Collectors.toList());
     }
@@ -49,13 +63,17 @@ public class ItemService extends BaseService {
             throw new InvalidInputException(validateItem);
         }
 
-        List<Item> duplicateItem = getDaoFactory().getItemDao().findByItemName(itemRequestDTO.getItemName());
+        // List<Item> duplicateItem =
+        // getDaoFactory().getItemDao().findByItemName(itemRequestDTO.getItemName());
         // Validations from DB
-        if (!duplicateItem.isEmpty()
-                && duplicateItem.get(0).getCategory().getCategoryCode().equals(itemRequestDTO.getCategoryId())) {
-            throw new InvalidInputException(
-                    String.format("Item with name %s already exists", itemRequestDTO.getItemName()));
-        }
+        // if (!duplicateItem.isEmpty()
+        // &&
+        // duplicateItem.get(0).getCategory().getCategoryCode().equals(itemRequestDTO.getCategoryId()))
+        // {
+        // throw new InvalidInputException(
+        // String.format("Item with name %s already exists",
+        // itemRequestDTO.getItemName()));
+        // }
 
         Item item = getMapperFactory().getItemMapper().requestToDomain(itemRequestDTO);
         item.setCategory(getDaoFactory().getCategoryDao().findById(itemRequestDTO.getCategoryId()).orElse(null));
@@ -83,6 +101,17 @@ public class ItemService extends BaseService {
         if (item == null)
             throw new NotPresentException(String.format("Item with %s not found", id));
         getDaoFactory().getItemDao().delete(item);
+    }
+
+    public List<ItemResponseDTO> findItemByCategoryCode(Integer categoryId) throws NotPresentException {
+        Optional<Category> category = getDaoFactory().getCategoryDao().findById(categoryId);
+        if (!category.isPresent()) {
+            throw new NotPresentException("Category with id not present" + categoryId);
+        }
+
+        List<Item> items = getDaoFactory().getItemDao().findByCategory(category.get());
+        return items.stream().map(e -> getMapperFactory().getItemMapper().domainToResponse(e))
+                .collect(Collectors.toList());
     }
 
 }

@@ -1,7 +1,11 @@
 package com.jewelbackend.backend.setup.controllers;
 
+import java.text.ParseException;
 import java.util.List;
 
+import com.jewelbackend.backend.common.config.HelperUtils;
+import com.jewelbackend.backend.common.criteriafilters.CriteriaFilter;
+import com.jewelbackend.backend.setup.models.Karigar;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,11 +39,30 @@ public class KarigarController {
     @GetMapping("")
     ResponseEntity<CommonResponse<List<KarigarResponseDTO>>> getAllKarigars(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "") String search) throws ParseException {
 
-        List<KarigarResponseDTO> karigarResponseDTOs = karigarService.getAllKarigars(page, size);
+
+        List<KarigarResponseDTO> karigarResponseDTOs = karigarService.getAllKarigars(page, size,search);
+        if(!search.isBlank()){
+            CriteriaFilter<Karigar> criteriaFilter = new CriteriaFilter<>();
+            long count = criteriaFilter.getQueryCount(Karigar.class, HelperUtils.listToMap(search), karigarService.getEntityManager());
+            CommonResponse<List<KarigarResponseDTO>> karigarResponseDTOsResponse = new CommonResponse<>("All Karigars",
+                    HttpStatus.OK.value(), karigarResponseDTOs, count);
+            return ResponseEntity.status(200).body(karigarResponseDTOsResponse);
+        }
         CommonResponse<List<KarigarResponseDTO>> karigarResponseDTOsResponse = new CommonResponse<>("All Karigars",
-                HttpStatus.OK.value(), karigarResponseDTOs);
+                HttpStatus.OK.value(), karigarResponseDTOs, karigarService.getDaoFactory().getKarigarDao().count());
+        return ResponseEntity.status(200).body(karigarResponseDTOsResponse);
+    }
+
+    @GetMapping("/karigarLov")
+    ResponseEntity<CommonResponse<List<KarigarResponseDTO>>> getAllKarigarsLovs() throws ParseException {
+
+
+        List<KarigarResponseDTO> karigarResponseDTOs = karigarService.getAllKarigarsLOV();
+        CommonResponse<List<KarigarResponseDTO>> karigarResponseDTOsResponse = new CommonResponse<>("All Karigars",
+                HttpStatus.OK.value(), karigarResponseDTOs, karigarService.getDaoFactory().getKarigarDao().count());
         return ResponseEntity.status(200).body(karigarResponseDTOsResponse);
     }
 

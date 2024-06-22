@@ -7,11 +7,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.stereotype.Service;
 
 import com.jewelbackend.backend.auth.JwtAuthConfig;
-import com.jewelbackend.backend.common.validator.ValidatorFactory;
-import com.jewelbackend.backend.setup.dao.DaoFactory;
+import com.jewelbackend.backend.factorybeans.ValidatorFactory;
+import com.jewelbackend.backend.factorybeans.DaoFactory;
+import com.jewelbackend.backend.factorybeans.MapperFactory;
 import com.jewelbackend.backend.setup.dto.response.CategoryResponseDTO;
 import com.jewelbackend.backend.setup.dto.response.MetalTypeResponseDTO;
-import com.jewelbackend.backend.setup.mapper.MapperFactory;
 import com.jewelbackend.backend.setup.models.MetalType;
 
 @Service
