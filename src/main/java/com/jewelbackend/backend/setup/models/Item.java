@@ -71,6 +71,9 @@ public class Item {
     @Column(name = "TOTAL_MULTI_WEIGHT")
     BigDecimal totalMultiWeight;
 
+    @Column(name = "ITEM_IMAGE_PATH")
+    String itemImagePath;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "karigarId", referencedColumnName = "id")
     Karigar karigar;

@@ -1,5 +1,6 @@
 package com.jewelbackend.backend.setup.services;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,18 +58,7 @@ public class KarigarService extends BaseService {
             Map<String,String> map = HelperUtils.listToMap(search);
             karigar = criteriaFilter.getEntitiesByCriteriaForSearch(Karigar.class, map, getEntityManager(), size, page,new ArrayList<>());
         }
-        return karigar.stream().map(e -> {
-            KarigarResponseDTO karigarResponseDTO = new KarigarResponseDTO();
-            karigarResponseDTO = getMapperFactory().getKarigarMapper().domainToResponse(e);
-            List<Item> items = e.getItems();
-            if (items != null) {
-                List<ItemResponseDTO> itemResponseDTOs = items.stream()
-                        .map(e2 -> getMapperFactory().getItemMapper().domainToResponse(e2))
-                        .collect(Collectors.toList());
-                karigarResponseDTO.setItemRequestDTOs(itemResponseDTOs);
-            }
-            return karigarResponseDTO;
-        }).collect(Collectors.toList());
+        return karigar.stream().map(e -> getMapperFactory().getKarigarMapper().domainToResponse(e)).collect(Collectors.toList());
 
     }
 

@@ -1,8 +1,14 @@
 package com.jewelbackend.backend.setup.controllers;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.util.List;
 
+import com.jewelbackend.backend.common.config.HelperUtils;
+import com.jewelbackend.backend.common.criteriafilters.CriteriaFilter;
+import com.jewelbackend.backend.setup.models.Invoice;
+import com.jewelbackend.backend.setup.models.Item;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,8 +40,14 @@ public class InvoiceController {
     public ResponseEntity<CommonResponse<List<InvoiceResponseDto>>> findAllInvoices(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "") String search) {
-        List<InvoiceResponseDto> invoiceResponseDtos = this.invoiceService.findAllInvoices(page, size,search);
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "",required = false) String filter) throws ParseException {
+        List<InvoiceResponseDto> invoiceResponseDtos = this.invoiceService.findAllInvoices(page, size,search,filter);
+        if (!filter.isBlank()) {
+            CriteriaFilter<Invoice> criteriaFilter = new CriteriaFilter<>();
+            Long count = criteriaFilter.getQueryCount(Invoice.class, HelperUtils.listToMap(filter), invoiceService.getEntityManager());
+            return ResponseEntity.ok().body(new CommonResponse<>("All items", HttpStatus.OK.value(), invoiceResponseDtos, count));
+        }
         return ResponseEntity.ok()
                 .body(new CommonResponse<>("All Invoices", 200, invoiceResponseDtos,
                         invoiceService.getDaoFactory().getInvoiceDao().count()));

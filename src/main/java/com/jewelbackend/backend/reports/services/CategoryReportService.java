@@ -58,7 +58,7 @@ public class CategoryReportService extends BaseReport {
         int pageWidth = (int) page1.getMediaBox().getWidth();
         int pageHeight = (int) page1.getMediaBox().getHeight();
         int cellSize = (pageWidth / 3) - 20;
-        BigDecimal totalPages = BigDecimal.valueOf(categories.size()).divide(BigDecimal.valueOf(16), RoundingMode.CEILING);
+        BigDecimal totalPages = BigDecimal.valueOf(categories.size()).divide(BigDecimal.valueOf(30), RoundingMode.CEILING);
         PDPageContentStream pdPageContentStream = new PDPageContentStream(pdDocument, page1);
         PdfPositionDTO pdfPositionDTO = new PdfPositionDTO();
         String vendorName = "Category Complete Report";
@@ -75,10 +75,10 @@ public class CategoryReportService extends BaseReport {
         tableStyleDTO.setTextStyleDTO(tableTextStyleDTO);
         ledgerHeader(pdDocument, pdPageContentStream, pageWidth, pageHeight, pdfPositionDTO, vendorName, vendorNameTextStyle, tableStyleDTO);
         int i = 1;
-        int rowHeight = 40;
+        int rowHeight = 22;
         int pageHeight1 = pageHeight - 120;
         for (Category category : categories) {
-            if (i % 16 == 0) {
+            if (i % 30 == 0) {
                 pdPageContentStream = changePDFPage(i, pdfPositionDTO, totalPages.intValue(), pdPageContentStream, pdDocument);
                 this.ledgerHeader(pdDocument, pdPageContentStream, pageWidth, pageHeight, pdfPositionDTO, vendorName, vendorNameTextStyle, tableStyleDTO);
                 pageHeight1 = pageHeight - 120;
@@ -98,7 +98,7 @@ public class CategoryReportService extends BaseReport {
                 i++;
             }
         }
-        BigDecimal pageNo = BigDecimal.valueOf(i).divide(BigDecimal.valueOf(16), RoundingMode.CEILING);
+        BigDecimal pageNo = BigDecimal.valueOf(i).divide(BigDecimal.valueOf(30), RoundingMode.CEILING);
         TextStyleDTO headerTextStyle = new TextStyleDTO(16, 14.5f, pdfPositionDTO, "", new PDType1Font(Standard14Fonts.FontName.COURIER_BOLD), Color.BLACK);
         headerTextStyle.setFontSize(8);
         pdfPositionDTO.setX(10);

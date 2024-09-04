@@ -1,10 +1,16 @@
 package com.jewelbackend.backend.setup.controllers;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
+import java.util.Base64;
 import java.util.List;
 
 import com.jewelbackend.backend.common.config.HelperUtils;
 import com.jewelbackend.backend.common.criteriafilters.CriteriaFilter;
+import com.jewelbackend.backend.setup.dto.response.ItemResponseLovDto;
 import com.jewelbackend.backend.setup.models.Item;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,13 +40,19 @@ public class ItemController {
         this.itemService = itemService;
     }
 
+    @GetMapping("/itemLov/{categoryId}")
+    ResponseEntity<CommonResponse<List<ItemResponseLovDto>>> getAllItemsLov(@PathVariable("categoryId") Integer categoryId) throws NotPresentException {
+        List<ItemResponseLovDto> itemResponseDTOs = itemService.getAllItemsLov(categoryId);
+        return ResponseEntity.ok().body(new CommonResponse<>("All items", HttpStatus.OK.value(), itemResponseDTOs));
+    }
+
     @GetMapping("")
     ResponseEntity<CommonResponse<List<ItemResponseDTO>>> getAllItems(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "") String search) throws ParseException {
-        List<ItemResponseDTO> itemResponseDTOs = itemService.findAllItems(page, size,search);
-        if(!search.isBlank()) {
+        List<ItemResponseDTO> itemResponseDTOs = itemService.findAllItems(page, size, search);
+        if (!search.isBlank()) {
             CriteriaFilter<Item> criteriaFilter = new CriteriaFilter<>();
             Long count = criteriaFilter.getQueryCount(Item.class, HelperUtils.listToMap(search), itemService.getEntityManager());
             return ResponseEntity.ok().body(new CommonResponse<>("All items", HttpStatus.OK.value(), itemResponseDTOs, count));
@@ -52,7 +64,7 @@ public class ItemController {
 
     @GetMapping("/{id}")
     ResponseEntity<CommonResponse<ItemResponseDTO>> getItemById(@PathVariable("id") String id)
-            throws NotPresentException {
+            throws NotPresentException, IOException {
         ItemResponseDTO item = this.itemService.findItemById(id);
         return ResponseEntity.ok().body(new CommonResponse<ItemResponseDTO>("id", 200, item));
     }
@@ -66,7 +78,7 @@ public class ItemController {
 
     @PostMapping("/save")
     ResponseEntity<CommonResponse<ItemResponseDTO>> saveItem(@RequestBody ItemRequestDTO itemRequestDTO)
-            throws InvalidInputException {
+            throws InvalidInputException, IOException {
         ItemResponseDTO itemResponseDTO = this.itemService.saveItem(itemRequestDTO);
         return ResponseEntity.status(200)
                 .body(new CommonResponse<>("Save item", HttpStatus.OK.value(), itemResponseDTO));
@@ -74,7 +86,7 @@ public class ItemController {
 
     @PutMapping("/update")
     ResponseEntity<CommonResponse<ItemResponseDTO>> updateItem(@RequestBody ItemRequestDTO itemRequestDTO)
-            throws NotPresentException {
+            throws NotPresentException, IOException {
 
         ItemResponseDTO itemResponseDTO = this.itemService.updateItem(itemRequestDTO);
         return ResponseEntity.ok().body(new CommonResponse<>("Item Updated", HttpStatus.OK.value(), itemResponseDTO));
@@ -88,6 +100,22 @@ public class ItemController {
 
         return ResponseEntity.ok()
                 .body(new CommonResponse<>("Item Deleted", HttpStatus.OK.value(), Integer.parseInt(id)));
+
+    }
+
+    @GetMapping("/upload-image")
+    ResponseEntity<String> uploadImageToDir() throws IOException {
+        this.itemService.uploadItemImageToDir();
+        return ResponseEntity.ok().body("Image uploaded successfully");
+    }
+
+
+    @GetMapping("/test-image")
+    String testImage() throws IOException {
+        var item = this.itemService.getDaoFactory().getItemDao().findById(4835).get();
+        Path path = Paths.get(item.getItemImagePath());
+        var image = Files.readAllBytes(path);
+        return Base64.getEncoder().encodeToString(image);
 
     }
 }

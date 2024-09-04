@@ -2,6 +2,7 @@ package com.jewelbackend.backend.setup.mapper;
 
 import java.util.Date;
 
+import com.jewelbackend.backend.sale.dto.response.InvoiceItemResponseDto;
 import org.springframework.stereotype.Component;
 
 import com.jewelbackend.backend.common.constants.Constants;
@@ -38,6 +39,7 @@ public class InvoiceMapper {
         invoice.setDiscount(invoiceRequestDTO.getDiscount());
         invoice.setDescription(invoiceRequestDTO.getDescription());
         invoice.setDiamondRate(invoiceRequestDTO.getDiamondRate());
+        invoice.setGoldRate(invoiceRequestDTO.getGoldRate());
         return invoice;
     }
 
@@ -62,6 +64,14 @@ public class InvoiceMapper {
         invoiceResponseDto.setDiscount(invoice.getDiscount());
         invoiceResponseDto.setDescription(invoice.getDescription());
         invoiceResponseDto.setDiamondRate(invoice.getDiamondRate());
+        if(invoice.getItem() != null){
+            InvoiceItemResponseDto invoiceItemResponseDto = new InvoiceItemResponseDto();
+            invoiceItemResponseDto.setCategoryId(invoice.getItem().getCategory().getCategoryCode());
+            invoiceItemResponseDto.setId(invoice.getItem().getId());
+            invoiceItemResponseDto.setNetWeight(invoice.getItem().getNetWeight());
+            invoiceItemResponseDto.setKarigarName(invoice.getItem().getKarigar().getKarigarName());
+            invoiceResponseDto.setItemResponseDTO(invoiceItemResponseDto);
+        }
         return invoiceResponseDto;
     }
 

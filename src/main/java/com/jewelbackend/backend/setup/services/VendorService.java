@@ -36,7 +36,7 @@ public class VendorService extends BaseService {
 
     public List<VendorRequestDTO> getAllVendors(int page, int size, String search) throws ParseException {
         CriteriaFilter<Vendor> criteriaFilter = new CriteriaFilter<>();
-        PageRequest pageRequest = PageRequest.of(page, (int) this.daoFactory.getVendorDao().count());
+        PageRequest pageRequest = PageRequest.of(page,size);
         List<Vendor> vendors = new ArrayList<>();
         if (!search.isBlank()) {
             vendors = criteriaFilter.getEntitiesByCriteriaForSearch(Vendor.class, HelperUtils.listToMap(search), getEntityManager(), size, page, new ArrayList<>());

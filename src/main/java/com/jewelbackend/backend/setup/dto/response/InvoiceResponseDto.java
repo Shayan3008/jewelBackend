@@ -1,8 +1,10 @@
 package com.jewelbackend.backend.setup.dto.response;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Date;
 
+import com.jewelbackend.backend.sale.dto.response.InvoiceItemResponseDto;
 import lombok.Data;
 
 @Data
@@ -45,5 +47,7 @@ public class InvoiceResponseDto {
 
     BigDecimal goldRate;
 
-    ItemResponseDTO itemResponseDTO;
+    InvoiceItemResponseDto itemResponseDTO;
+
+    Integer itemId;
 }

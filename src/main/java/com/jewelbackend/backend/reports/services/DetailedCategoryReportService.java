@@ -28,6 +28,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class DetailedCategoryReportService extends BaseReport {
@@ -46,9 +47,74 @@ public class DetailedCategoryReportService extends BaseReport {
         Category category = this.getDaoFactory().getCategoryDao().findById(id).orElseThrow(() -> new EmptyReportException("Category not found"));
         List<Item> items = category.getItems();
         if (format.equals("PDF")) {
+            items = items.stream().filter(e -> (e.getNetWeight() != null && e.getNetWeight().compareTo(BigDecimal.ZERO) > 0)).collect(Collectors.toList());
+            if (category.getMetalType().getMetalName().equalsIgnoreCase("DIAMOND")) {
+                return generateDetailedCategoryReportForDiamond(category, items);
+            }
             return generateDetailedCategoryReport(category, items);
         }
         return new byte[0];
+    }
+
+    private byte[] generateDetailedCategoryReportForDiamond(Category category, List<Item> items) throws IOException, ParseException {
+        PDDocument pdDocument = new PDDocument();
+
+        PDPage page1 = new PDPage(PDRectangle.A4);
+        pdDocument.addPage(page1);
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        int pageWidth = (int) page1.getMediaBox().getWidth();
+        int pageHeight = (int) page1.getMediaBox().getHeight();
+        int cellSize = (pageWidth / 6) - 20;
+        BigDecimal totalPages = BigDecimal.valueOf(items.size()).divide(BigDecimal.valueOf(30), RoundingMode.CEILING);
+        PDPageContentStream pdPageContentStream = new PDPageContentStream(pdDocument, page1);
+        PdfPositionDTO pdfPositionDTO = new PdfPositionDTO();
+        String vendorName = category.getCategoryName();
+        int[] cellWidths = {cellSize, cellSize, cellSize, cellSize, cellSize, cellSize+60};
+        TextStyleDTO vendorNameTextStyle = new TextStyleDTO(12, 12.5f, pdfPositionDTO, "Vendor Name: " + vendorName, new PDType1Font(Standard14Fonts.FontName.TIMES_BOLD), Color.BLACK);
+        TextStyleDTO tableTextStyleDTO = new TextStyleDTO(11, 12.5f, pdfPositionDTO, "",
+                new PDType1Font(Standard14Fonts.FontName.HELVETICA), Color.BLACK);
+        TableStyleDTO tableStyleDTO = new TableStyleDTO();
+        tableStyleDTO.setColWidths(cellWidths);
+        tableStyleDTO.setColPosition(0);
+        tableStyleDTO.setCellHeight(30);
+        tableStyleDTO.setXInitialPosition(20);
+        tableStyleDTO.setFillColor(Color.WHITE);
+        tableStyleDTO.setTextStyleDTO(tableTextStyleDTO);
+        ledgerHeaderForDiamond(pdDocument, pdPageContentStream, pageWidth, pageHeight, pdfPositionDTO, vendorName, vendorNameTextStyle, tableStyleDTO);
+        int i = 1;
+        int rowHeight = 22;
+        int pageHeight1 = pageHeight - 100;
+        for (Item item : items) {
+            if (i % 30 == 0) {
+                pdPageContentStream = changePDFPage(i, pdfPositionDTO, totalPages.intValue(), pdPageContentStream, pdDocument);
+                this.ledgerHeaderForDiamond(pdDocument, pdPageContentStream, pageWidth, pageHeight, pdfPositionDTO, vendorName, vendorNameTextStyle, tableStyleDTO);
+                pageHeight1 = pageHeight - 100;
+            }
+            pageHeight1 -= rowHeight;
+            pdfPositionDTO.setY(pageHeight1);
+            tableTextStyleDTO.setPdfPositionDTO(pdfPositionDTO);
+            tableStyleDTO.setTextStyleDTO(tableTextStyleDTO);
+            getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, String.valueOf(i), false);
+            getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, item.getDesignNo(), false);
+            getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, item.getQty().toString(), false);
+            getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, item.getKarat(), false);
+            getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, item.getNetWeight().toString() + " gms", true);
+            getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, item.getDiamondWeight().toString() + " cts", true);
+            i++;
+        }
+        BigDecimal pageNo = BigDecimal.valueOf(i).divide(BigDecimal.valueOf(30), RoundingMode.CEILING);
+        TextStyleDTO headerTextStyle = new TextStyleDTO(16, 14.5f, pdfPositionDTO, "", new PDType1Font(Standard14Fonts.FontName.COURIER_BOLD), Color.BLACK);
+        headerTextStyle.setFontSize(8);
+        pdfPositionDTO.setX(10);
+        pdfPositionDTO.setY(20);
+        headerTextStyle.setPdfPositionDTO(pdfPositionDTO);
+        getPdfTextUtil().addTextToPage(String.format("page %s - %s ", pageNo, totalPages), headerTextStyle, pdPageContentStream);
+        pdPageContentStream.close();
+        pdDocument.save("CategoryCompleteReport.pdf");
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        pdDocument.save(outputStream);
+        pdDocument.close();
+        return outputStream.toByteArray();
     }
 
 
@@ -61,7 +127,7 @@ public class DetailedCategoryReportService extends BaseReport {
         int pageWidth = (int) page1.getMediaBox().getWidth();
         int pageHeight = (int) page1.getMediaBox().getHeight();
         int cellSize = (pageWidth / 5) - 20;
-        BigDecimal totalPages = BigDecimal.valueOf(items.size()).divide(BigDecimal.valueOf(16), RoundingMode.CEILING);
+        BigDecimal totalPages = BigDecimal.valueOf(items.size()).divide(BigDecimal.valueOf(30), RoundingMode.CEILING);
         PDPageContentStream pdPageContentStream = new PDPageContentStream(pdDocument, page1);
         PdfPositionDTO pdfPositionDTO = new PdfPositionDTO();
         String vendorName = category.getCategoryName();
@@ -78,13 +144,13 @@ public class DetailedCategoryReportService extends BaseReport {
         tableStyleDTO.setTextStyleDTO(tableTextStyleDTO);
         ledgerHeader(pdDocument, pdPageContentStream, pageWidth, pageHeight, pdfPositionDTO, vendorName, vendorNameTextStyle, tableStyleDTO);
         int i = 1;
-        int rowHeight = 40;
-        int pageHeight1 = pageHeight - 140;
+        int rowHeight = 22;
+        int pageHeight1 = pageHeight - 100;
         for (Item item : items) {
-            if (i % 16 == 0) {
+            if (i % 30 == 0) {
                 pdPageContentStream = changePDFPage(i, pdfPositionDTO, totalPages.intValue(), pdPageContentStream, pdDocument);
                 this.ledgerHeader(pdDocument, pdPageContentStream, pageWidth, pageHeight, pdfPositionDTO, vendorName, vendorNameTextStyle, tableStyleDTO);
-                pageHeight1 = pageHeight - 140;
+                pageHeight1 = pageHeight - 100;
             }
             pageHeight1 -= rowHeight;
             pdfPositionDTO.setY(pageHeight1);
@@ -98,7 +164,7 @@ public class DetailedCategoryReportService extends BaseReport {
             i++;
 
         }
-        BigDecimal pageNo = BigDecimal.valueOf(i).divide(BigDecimal.valueOf(16), RoundingMode.CEILING);
+        BigDecimal pageNo = BigDecimal.valueOf(i).divide(BigDecimal.valueOf(30), RoundingMode.CEILING);
         TextStyleDTO headerTextStyle = new TextStyleDTO(16, 14.5f, pdfPositionDTO, "", new PDType1Font(Standard14Fonts.FontName.COURIER_BOLD), Color.BLACK);
         headerTextStyle.setFontSize(8);
         pdfPositionDTO.setX(10);
@@ -127,7 +193,7 @@ public class DetailedCategoryReportService extends BaseReport {
 
         //       Create table
         pdfPositionDTO.setX(20);
-        pdfPositionDTO.setY(pageHeight - 140);
+        pdfPositionDTO.setY(pageHeight - 100);
 
         getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "SNo", false);
         getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Design no", false);
@@ -135,4 +201,31 @@ public class DetailedCategoryReportService extends BaseReport {
         getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Purity", false);
         getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Net Weight", false);
     }
+
+
+    private void ledgerHeaderForDiamond(PDDocument pdDocument, PDPageContentStream pdPageContentStream, int pageWidth, int pageHeight, PdfPositionDTO pdfPositionDTO,
+                                        String vendorName, TextStyleDTO vendorNameTextStyle, TableStyleDTO tableStyleDTO) throws IOException, ParseException {
+        generateHeader(pdPageContentStream, pageWidth, pageHeight, "Detailed Category Report");
+
+        TextStyleDTO headerTextStyle = new TextStyleDTO(16, 14.5f, pdfPositionDTO, vendorName, new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), Color.BLACK);
+        ;
+
+        pdfPositionDTO.setX(20);
+        pdfPositionDTO.setY(pageHeight - 80);
+        vendorNameTextStyle.setPdfPositionDTO(pdfPositionDTO);
+        getPdfTextUtil().addTextToPage("Item Name:" + vendorName, vendorNameTextStyle, pdPageContentStream);
+
+        //       Create table
+        pdfPositionDTO.setX(20);
+        pdfPositionDTO.setY(pageHeight - 100);
+
+        getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "SNo", false);
+        getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Design no", false);
+        getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Qty", false);
+        getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Purity", false);
+        getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Net Weight", false);
+        getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Diamond Weight", false);
+
+    }
+
 }

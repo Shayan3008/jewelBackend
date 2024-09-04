@@ -1,13 +1,17 @@
 package com.jewelbackend.backend.setup.services;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.jewelbackend.backend.common.criteriafilters.CriteriaFilter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -33,32 +37,30 @@ public class InvoiceService extends BaseService {
     private final CashBookService cashBookService;
 
     public InvoiceService(DaoFactory daoFactory, ValidatorFactory validatorFactory, MapperFactory mapperFactory,
-            AuthenticationManager authenticationManager, JwtAuthConfig jwtAuthConfig,CashBookService cashBookService) {
+                          AuthenticationManager authenticationManager, JwtAuthConfig jwtAuthConfig, CashBookService cashBookService) {
         super(daoFactory, validatorFactory, mapperFactory, authenticationManager, jwtAuthConfig);
         this.cashBookService = cashBookService;
     }
 
-    public List<InvoiceResponseDto> findAllInvoices(int page, int size, String search) {
+    public List<InvoiceResponseDto> findAllInvoices(int page, int size, String search,String filter) throws ParseException {
         PageRequest pageRequest = PageRequest.of(page, size);
         List<Invoice> invoices = null;
         Page<Invoice> invoicPage = null;
-        if (search.isBlank()) {
+        if (search.isBlank() && filter.isBlank()) {
 
             invoicPage = getDaoFactory().getInvoiceDao().findAll(pageRequest);
             invoices = invoicPage.getContent();
-        } else {
+        } else if (!filter.isBlank()){
+            CriteriaFilter<Invoice> criteriaFilter = new CriteriaFilter<>();
+            invoices = criteriaFilter.getEntitiesByCriteriaForSearch(Invoice.class, HelperUtils.listToMap(filter), getEntityManager(),
+                    size,page,new ArrayList<>());
+        }
+        else {
             search = "%" + search + "%";
             invoicPage = getDaoFactory().getInvoiceDao().findAllByKarigarNameOrCategoryName(search, pageRequest);
             invoices = invoicPage.getContent();
         }
-        return invoices.stream().map(e -> {
-            if (e.getItem() == null)
-                return getMapperFactory().getInvoiceMapper().domainToResponse(e);
-            ItemResponseDTO itemResponseDTO = getMapperFactory().getItemMapper().domainToResponse(e.getItem());
-            InvoiceResponseDto invoiceResponseDto = getMapperFactory().getInvoiceMapper().domainToResponse(e);
-            invoiceResponseDto.setItemResponseDTO(itemResponseDTO);
-            return invoiceResponseDto;
-        })
+        return invoices.stream().map(e -> getMapperFactory().getInvoiceMapper().domainToResponse(e))
                 .collect(Collectors.toList());
     }
 

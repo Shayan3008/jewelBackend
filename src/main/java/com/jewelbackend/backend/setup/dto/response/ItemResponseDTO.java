@@ -43,4 +43,5 @@ public class ItemResponseDTO {
     BigDecimal totalMultiWeight;
 
     BigDecimal remainingNetWeight;
+
 }

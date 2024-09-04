@@ -1,7 +1,13 @@
 package com.jewelbackend.backend.setup.mapper;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
 
+import com.jewelbackend.backend.common.config.HelperUtils;
+import org.apache.logging.log4j.Level;
 import org.springframework.stereotype.Component;
 
 import com.jewelbackend.backend.setup.dto.request.ItemRequestDTO;
@@ -10,7 +16,7 @@ import com.jewelbackend.backend.setup.models.Item;
 
 @Component
 public class ItemMapper {
-    public ItemResponseDTO domainToResponse(Item item) {
+    public ItemResponseDTO domainToResponse(Item item) throws IOException {
         ItemResponseDTO itemResponseDTO = new ItemResponseDTO();
         itemResponseDTO.setId(item.getId());
         itemResponseDTO.setCategoryId(item.getCategory().getCategoryCode());
@@ -20,8 +26,22 @@ public class ItemMapper {
         itemResponseDTO.setKarigarId(item.getKarigar().getId());
         itemResponseDTO.setNetWeight(item.getNetWeight());
 
-        itemResponseDTO.setItemImage(
-                item.getItemImage() == null ? "" : Base64.getEncoder().encodeToString(item.getItemImage()));
+        if(item.getItemImagePath() != null){
+            HelperUtils.logMessage(Level.ERROR,"Here is the path: "+item.getItemImagePath());
+            Path path = Paths.get(item.getItemImagePath());
+            HelperUtils.logMessage(Level.ERROR,"Here is the path: "+item.getItemImagePath());
+            if(Files.exists(path)){
+
+                var image = Files.readAllBytes(path);
+                itemResponseDTO.setItemImage(
+                        image == null ? "" : Base64.getEncoder().encodeToString(image));
+            }else{
+                HelperUtils.logMessage(Level.ERROR,"Here is the path: "+item.getItemImagePath());
+            }
+        }
+        else{
+            HelperUtils.logMessage(Level.ERROR,"Image path is null");
+        }
         itemResponseDTO.setCategoryName(item.getCategory().getCategoryName());
         itemResponseDTO.setKarigarName(item.getKarigar().getKarigarName());
         itemResponseDTO.setDescription(item.getDescription());
@@ -32,7 +52,7 @@ public class ItemMapper {
         itemResponseDTO.setDiamondQty(item.getDiamondQty());
         itemResponseDTO.setDiamondWeight(item.getDiamondWeight());
         itemResponseDTO.setMultiItem(item.getMultiItem());
-        itemResponseDTO.setTotalQty(item.getQty());
+        itemResponseDTO.setTotalQty(item.getTotalQty());
         itemResponseDTO.setTotalMultiWeight(item.getTotalMultiWeight());
         itemResponseDTO.setRemainingNetWeight(item.getRemainingNetWeight());
         return itemResponseDTO;
@@ -62,5 +82,5 @@ public class ItemMapper {
         return item;
     }
 
-    
+
 }

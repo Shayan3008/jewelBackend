@@ -31,6 +31,16 @@ public class CategoryService extends BaseService {
         super(daoFactory, validatorFactory, mapperFactory, authenticationManager, jwtAuthConfig);
     }
 
+    public List<CategoryResponseDTO> getCategoryLov(){
+        List<Category> categories  = (List<Category>) getDaoFactory().getCategoryDao().findAll();;
+
+        return categories.stream().map(e -> {
+            CategoryResponseDTO categoryResponseDTO = getMapperFactory().getCategoryMapper().domainToResponse(e);
+            return categoryResponseDTO;
+        }).toList();
+    }
+
+
     public List<CategoryResponseDTO> getAllCategory(int page, int size, String search) {
         List<Category> categories = null;
         PageRequest pageRequest = PageRequest.of(page, size);
@@ -44,9 +54,9 @@ public class CategoryService extends BaseService {
             categories = categoryPage.getContent();
         }
         return categories.stream().map(e -> {
-            List<Item> items = e.getItems().stream()
-                    .filter(item -> item != null && item.getRemainingNetWeight() != null && !item.getRemainingNetWeight().setScale(2).equals(BigDecimal.valueOf(0).setScale(2)))
-                    .toList();
+//            List<Item> items = e.getItems().stream()
+//                    .filter(item -> item != null && item.getRemainingNetWeight() != null && !item.getRemainingNetWeight().setScale(2).equals(BigDecimal.valueOf(0).setScale(2)))
+//                    .toList();
 //            List<ItemResponseDTO> itemResponseDTOs = items.stream()
 //                    .map(item -> getMapperFactory().getItemMapper().domainToResponse(item))
 //                    .collect(Collectors.toList());

@@ -94,11 +94,11 @@ public class LedgerTransactionReportService extends BaseReport {
         ledgerHeader(pdDocument, pdPageContentStream, pageWidth, pageHeight, pdfPositionDTO, vendorName, vendorNameTextStyle, tableStyleDTO);
 
         int i = 1;
-        int rowHeight = 40;
+        int rowHeight = 22;
         int pageHeight1 = pageHeight - 120;
-        int totalPages = ledgerTransactions.size() / 16;
+        int totalPages = ledgerTransactions.size() / 30;
         for (LedgerTransaction ledgerTransaction : ledgerTransactions) {
-            if (i % 16 == 0) {
+            if (i % 30 == 0) {
                 pdPageContentStream = changePDFPage(i, pdfPositionDTO, totalPages, pdPageContentStream, pdDocument);
                 this.ledgerHeader(pdDocument, pdPageContentStream, pageWidth, pageHeight, pdfPositionDTO, vendorName, vendorNameTextStyle, tableStyleDTO);
                 pageHeight1 = pageHeight - 120;
@@ -132,7 +132,7 @@ public class LedgerTransactionReportService extends BaseReport {
             i++;
         }
 
-        int pageNo = i / 16;
+        int pageNo = i / 30;
         TextStyleDTO headerTextStyle = new TextStyleDTO(16, 14.5f, pdfPositionDTO, "", new PDType1Font(Standard14Fonts.FontName.COURIER_BOLD), Color.BLACK);
         headerTextStyle.setFontSize(8);
         pdfPositionDTO.setX(10);
@@ -159,17 +159,17 @@ public class LedgerTransactionReportService extends BaseReport {
             pageHeight1 = pageHeight1 - 20;
             pdfPositionDTO.setY(pageHeight1);
             if (debitGoldWeight.compareTo(creditGoldWeight) <= 0) {
-                vendorNameTextStyle.setColor(Color.GREEN);
-            }else{
                 vendorNameTextStyle.setColor(Color.RED);
+            }else{
+                vendorNameTextStyle.setColor(Color.GREEN);
             }
             getPdfTextUtil().addTextToPage("Total Standing Gold Weight : " + debitGoldWeight.subtract(creditGoldWeight).abs() + " gms", vendorNameTextStyle, pdPageContentStream);
             pageHeight1 = pageHeight1 - 20;
             pdfPositionDTO.setY(pageHeight1);
             if(debit.compareTo(credit) <= 0){
-                vendorNameTextStyle.setColor(Color.GREEN);
-            }else{
                 vendorNameTextStyle.setColor(Color.RED);
+            }else{
+                vendorNameTextStyle.setColor(Color.GREEN);
             }
 
             getPdfTextUtil().addTextToPage("Total Cash Amount : " + debit.subtract(credit).abs() + " Rs", vendorNameTextStyle, pdPageContentStream);

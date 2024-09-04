@@ -43,6 +43,15 @@ public class CategoryController {
         return ResponseEntity.status(200).body(categoryResponseDtos);
     }
 
+    @GetMapping("/categoryLov")
+    ResponseEntity<CommonResponse<List<CategoryResponseDTO>>> getAllCategoriesLovs() {
+        List<CategoryResponseDTO> categoryResponseDTOs = categoryService.getCategoryLov();
+        CommonResponse<List<CategoryResponseDTO>> categoryResponseDtos = new CommonResponse<>("List All Categories",
+                HttpStatus.OK.value(), categoryResponseDTOs,
+                this.categoryService.getDaoFactory().getCategoryDao().count());
+        return ResponseEntity.status(200).body(categoryResponseDtos);
+    }
+
     @PostMapping("/save")
     ResponseEntity<CommonResponse<CategoryResponseDTO>> saveCategory(
             @RequestBody CategoryRequestDTO categoryRequestDTO)
