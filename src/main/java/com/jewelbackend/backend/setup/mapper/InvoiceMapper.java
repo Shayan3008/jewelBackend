@@ -64,7 +64,7 @@ public class InvoiceMapper {
         invoiceResponseDto.setDiscount(invoice.getDiscount());
         invoiceResponseDto.setDescription(invoice.getDescription());
         invoiceResponseDto.setDiamondRate(invoice.getDiamondRate());
-        if(invoice.getItem() != null){
+        if (invoice.getItem() != null) {
             InvoiceItemResponseDto invoiceItemResponseDto = new InvoiceItemResponseDto();
             invoiceItemResponseDto.setCategoryId(invoice.getItem().getCategory().getCategoryCode());
             invoiceItemResponseDto.setId(invoice.getItem().getId());
@@ -79,7 +79,11 @@ public class InvoiceMapper {
         CashBook cashBook = new CashBook();
         cashBook.setAmount(invoice.getTotalBill());
         cashBook.setTrnDate(invoice.getInvoiceDate());
-        cashBook.setTrnType(Constants.SALE_CASH);
+        cashBook.setTrnType(Constants.PURCHASE_CASH);
+        if (invoice.getItem() != null)
+            cashBook.setDescription("Invoice  " + invoice.getItem().getDesignNo());
+        else
+            cashBook.setDescription("Invoice Without Item");
         return cashBook;
     }
 

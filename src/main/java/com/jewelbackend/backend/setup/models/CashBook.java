@@ -35,4 +35,7 @@ public class CashBook {
 
     @Column(name = "OPENING_BALANCE", nullable = false)
     BigDecimal openingBalance;
+
+    @Column(name = "DESCRIPTION", nullable = true)
+    String description;
 }

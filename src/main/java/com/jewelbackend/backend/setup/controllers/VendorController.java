@@ -9,6 +9,7 @@ import com.jewelbackend.backend.common.exceptions.NotPresentException;
 import com.jewelbackend.backend.setup.dto.request.LedgerTransactionDto;
 import com.jewelbackend.backend.setup.dto.response.KarigarResponseDTO;
 import com.jewelbackend.backend.setup.dto.response.LedgerTransactionUpdateDto;
+import com.jewelbackend.backend.setup.dto.response.VendorLedgerCashGoldResponseDto;
 import com.jewelbackend.backend.setup.models.Karigar;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -74,5 +75,25 @@ public class VendorController {
         var vendorResponse = new CommonResponse<>("All Vendors Fetched",
                 HttpStatus.OK.value(), vendorService.getVendorByVendorHeader(id));
         return ResponseEntity.status(200).body(vendorResponse);
+    }
+
+    @GetMapping("/vendorLov")
+    ResponseEntity<CommonResponse<List<VendorRequestDTO>>> getVendorLov() {
+        var vendorResponse = new CommonResponse<>("All Vendors Fetched",
+                HttpStatus.OK.value(), vendorService.getVendorLov());
+        return ResponseEntity.status(200).body(vendorResponse);
+    }
+
+    @DeleteMapping("/delete/{vendorId}")
+    ResponseEntity<CommonResponse<String>> deleteVendor(@PathVariable int vendorId) throws NotPresentException {
+        vendorService.deleteVendor(vendorId);
+        return ResponseEntity.status(200).body(new CommonResponse<>("Vendor Deleted", HttpStatus.OK.value(), "Vendor Deleted"));
+    }
+
+    @GetMapping("/getVendorTotalStandingCashAndGold/{id}")
+    ResponseEntity<CommonResponse<VendorLedgerCashGoldResponseDto>> getVendorTotalStandingCashAndGold(@PathVariable int id) throws NotPresentException {
+        var ledgerTransactionDtoCommonResponse = new CommonResponse<>("Ledger Transaction Fetched",
+                HttpStatus.OK.value(), vendorService.getVendorTotalStandingCashAndGold(id));
+        return ResponseEntity.status(200).body(ledgerTransactionDtoCommonResponse);
     }
 }

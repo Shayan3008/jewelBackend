@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -86,23 +87,15 @@ public class ItemService extends BaseService {
             throw new InvalidInputException(validateItem);
         }
 
-        // List<Item> duplicateItem =
-        // getDaoFactory().getItemDao().findByItemName(itemRequestDTO.getItemName());
-        // Validations from DB
-        // if (!duplicateItem.isEmpty()
-        // &&
-        // duplicateItem.get(0).getCategory().getCategoryCode().equals(itemRequestDTO.getCategoryId()))
-        // {
-        // throw new InvalidInputException(
-        // String.format("Item with name %s already exists",
-        // itemRequestDTO.getItemName()));
-        // }
 
         Item item = getMapperFactory().getItemMapper().requestToDomain(itemRequestDTO);
         item.setCategory(getDaoFactory().getCategoryDao().findById(itemRequestDTO.getCategoryId()).orElse(null));
         item.setMetalType(getDaoFactory().getMetalTypeDao().findById(itemRequestDTO.getMetalName()).orElse(null));
         item.setKarigar(getDaoFactory().getKarigarDao().findById(itemRequestDTO.getKarigarId()).orElse(null));
+        if (item.getItemImage() != null)
+            item = this.uploadItemImageToDir(item);
         item = getDaoFactory().getItemDao().save(item);
+
         return getMapperFactory().getItemMapper().domainToResponse(item);
     }
 
@@ -115,6 +108,9 @@ public class ItemService extends BaseService {
         updatedItem
                 .setMetalType(getDaoFactory().getMetalTypeDao().findById(itemRequestDTO.getMetalName()).orElse(null));
         updatedItem.setKarigar(getDaoFactory().getKarigarDao().findById(itemRequestDTO.getKarigarId()).orElse(null));
+        if (item.getItemImage() != null)
+            updatedItem = this.uploadItemImageToDir(updatedItem);
+        updatedItem = getDaoFactory().getItemDao().save(updatedItem);
         updatedItem = getDaoFactory().getItemDao().save(updatedItem);
         return getMapperFactory().getItemMapper().domainToResponse(updatedItem);
     }
@@ -149,45 +145,46 @@ public class ItemService extends BaseService {
             throw new NotPresentException("Category with id not present" + categoryId);
         }
         return getDaoFactory().getItemDao().findByCategory(category.get()).stream()
+                .filter(e -> (e.getNetWeight() != null && e.getNetWeight().compareTo(BigDecimal.ZERO) > 0) && (e.getRemainingNetWeight() != null && e.getRemainingNetWeight().compareTo(BigDecimal.ZERO) > 0))
                 .map(e -> {
                     ItemResponseLovDto itemResponseLovDto = new ItemResponseLovDto();
                     itemResponseLovDto.setId(e.getId());
                     itemResponseLovDto.setDesignNo(e.getDesignNo());
                     return itemResponseLovDto;
+
                 }).collect(Collectors.toList());
     }
 
     //    Method will take images from item and upload into directory.
-    public void uploadItemImageToDir() throws IOException {
+    public Item uploadItemImageToDir(Item item) throws IOException {
 //        var items = getDaoFactory().getItemDao().getAllItemWhoHaveImages();
 //        for (var item : items) {
-//            if(item.getItemImage() == null)
-//                continue;
-//            String fileName = UUID.randomUUID() + "_" + item.getDesignNo() + ".jpg";
-//            // Create the directory if it does not exist
-//            Path uploadPath = Paths.get(imageDirPath);
-//            if (!Files.exists(uploadPath)) {
-//                HelperUtils.logMessage(Level.ERROR, "DIRECTORY NOT FOUND");
-//                return;
-//            }
-//
-//            // Generate a unique filename
-//
-//            Path filePath = Paths.get(imageDirPath, fileName);
-//
-//
-//            // Convert byte array to BufferedImage
-//            ByteArrayInputStream bais = new ByteArrayInputStream(item.getItemImage());
-//            BufferedImage bufferedImage = ImageIO.read(bais);
-//
-//            // Save the BufferedImage to the specified path
-//            File outputFile = new File(filePath.toString());
-//            ImageIO.write(bufferedImage, "jpg", outputFile);
-//            item.setItemImagePath(filePath.toString());
-//            item.setItemImage(null);
-//            getDaoFactory().getItemDao().save(item);
+        String fileName = UUID.randomUUID() + "_" + item.getDesignNo() + ".jpg";
+        // Create the directory if it does not exist
+        Path uploadPath = Paths.get(imageDirPath);
+        if (!Files.exists(uploadPath)) {
+            HelperUtils.logMessage(Level.ERROR, "DIRECTORY NOT FOUND");
+            return null;
         }
 
+        // Generate a unique filename
 
+        Path filePath = Paths.get(imageDirPath, fileName);
+
+
+        // Convert byte array to BufferedImage
+        ByteArrayInputStream bais = new ByteArrayInputStream(item.getItemImage());
+        BufferedImage bufferedImage = ImageIO.read(bais);
+
+        // Save the BufferedImage to the specified path
+        File outputFile = new File(filePath.toString());
+        ImageIO.write(bufferedImage, "jpg", outputFile);
+        item.setItemImagePath(filePath.toString());
+        item.setItemImage(null);
+        return item;
+//            getDaoFactory().getItemDao().save(item);
     }
+
+
+}
 

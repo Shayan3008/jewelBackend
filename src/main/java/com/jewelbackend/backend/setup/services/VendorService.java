@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.jewelbackend.backend.common.config.HelperUtils;
 import com.jewelbackend.backend.common.constants.Constants;
@@ -13,6 +14,7 @@ import com.jewelbackend.backend.common.criteriafilters.CriteriaFilter;
 import com.jewelbackend.backend.common.exceptions.NotPresentException;
 import com.jewelbackend.backend.setup.dto.request.LedgerTransactionDto;
 import com.jewelbackend.backend.setup.dto.response.LedgerTransactionUpdateDto;
+import com.jewelbackend.backend.setup.dto.response.VendorLedgerCashGoldResponseDto;
 import com.jewelbackend.backend.setup.models.LedgerTransaction;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,17 +38,17 @@ public class VendorService extends BaseService {
 
     public List<VendorRequestDTO> getAllVendors(int page, int size, String search) throws ParseException {
         CriteriaFilter<Vendor> criteriaFilter = new CriteriaFilter<>();
-        PageRequest pageRequest = PageRequest.of(page,size);
+        PageRequest pageRequest = PageRequest.of(page, size);
         List<Vendor> vendors = new ArrayList<>();
         if (!search.isBlank()) {
             vendors = criteriaFilter.getEntitiesByCriteriaForSearch(Vendor.class, HelperUtils.listToMap(search), getEntityManager(), size, page, new ArrayList<>());
 
         } else {
             Page<Vendor> vendorPage = getDaoFactory().getVendorDao().findAll(pageRequest);
-            vendors =  vendorPage.getContent();
+            vendors = vendorPage.getContent();
         }
         List<VendorRequestDTO> vendorRequestDTOS = new ArrayList<>();
-        for(var vendor: vendors){
+        for (var vendor : vendors) {
             VendorRequestDTO vendorRequestDTO = new VendorRequestDTO();
             vendorRequestDTO.setId(vendor.getId());
             vendorRequestDTO.setVendorName(vendor.getName());
@@ -118,10 +120,10 @@ public class VendorService extends BaseService {
     }
 
     public List<VendorRequestDTO> getVendorByVendorHeader(int id) throws NotPresentException {
-        var vendorHeaders = this.daoFactory.getVendorHeaderDao().findById(id).orElseThrow(()->new NotPresentException("Vendor Header not found"));
+        var vendorHeaders = this.daoFactory.getVendorHeaderDao().findById(id).orElseThrow(() -> new NotPresentException("Vendor Header not found"));
         List<Vendor> vendors = vendorHeaders.getVendors();
         List<VendorRequestDTO> vendorRequestDTOS = new ArrayList<>();
-        for(var vendor: vendors){
+        for (var vendor : vendors) {
             VendorRequestDTO vendorRequestDTO = new VendorRequestDTO();
             vendorRequestDTO.setId(vendor.getId());
             vendorRequestDTO.setVendorName(vendor.getName());
@@ -130,5 +132,35 @@ public class VendorService extends BaseService {
             vendorRequestDTOS.add(vendorRequestDTO);
         }
         return vendorRequestDTOS;
+    }
+
+    public List<VendorRequestDTO> getVendorLov() {
+        var vendors = (List<Vendor>) daoFactory.getVendorDao().findAll();
+
+        return vendors.stream().map(e -> mapperFactory.getVendorMapper().domainToResponseForLov(e)).collect(Collectors.toList());
+    }
+
+    public void deleteVendor(int vendorId) {
+        daoFactory.getVendorDao().deleteById(vendorId);
+    }
+
+    public VendorLedgerCashGoldResponseDto getVendorTotalStandingCashAndGold(int id) throws NotPresentException {
+        Vendor vendor = this.daoFactory.getVendorDao().findById(id).orElseThrow(()->new NotPresentException("Vendor not found"));
+        VendorLedgerCashGoldResponseDto vendorLedgerCashGoldResponseDto = new VendorLedgerCashGoldResponseDto();
+        BigDecimal standingCash = BigDecimal.ZERO;
+        BigDecimal standingGold = BigDecimal.ZERO;
+        for(var ledger : vendor.getLedgerTransactions()){
+            if(ledger.getCredit() != null)
+                standingCash = standingCash.subtract(ledger.getCredit());
+            else if(ledger.getDebit() != null)
+                standingCash = standingCash.add(ledger.getDebit());
+            else if(ledger.getCreditGoldWeight() != null)
+                standingGold = standingGold.subtract(ledger.getCreditGoldWeight());
+            else if(ledger.getDebitGoldWeight() != null)
+                standingGold = standingGold.add(ledger.getDebitGoldWeight());
+        }
+        vendorLedgerCashGoldResponseDto.setCash(standingCash);
+        vendorLedgerCashGoldResponseDto.setGold(standingGold);
+        return vendorLedgerCashGoldResponseDto;
     }
 }

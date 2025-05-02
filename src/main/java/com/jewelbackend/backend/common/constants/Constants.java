@@ -10,6 +10,8 @@ public class Constants {
     public static final Pattern EMAILREGEX = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$",
             Pattern.CASE_INSENSITIVE);
 
+    public static final String MANUAL_OPENING = "Opened Manually";
+
     public static final String SALE_CASH = "CREDIT";
     public static final String PURCHASE_CASH = "DEBIT";
 

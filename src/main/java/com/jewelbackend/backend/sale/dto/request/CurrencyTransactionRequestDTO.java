@@ -1,6 +1,7 @@
 package com.jewelbackend.backend.sale.dto.request;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
 import lombok.Data;
 
@@ -13,4 +14,5 @@ public class CurrencyTransactionRequestDTO {
     private String description;
     private BigDecimal qty;
     private int currencyId;
+    private Date trnDate;
 }

@@ -27,4 +27,7 @@ public interface CashBookDao extends CrudRepository<CashBook, Integer>, PagingAn
     @Query("SELECT e from CashBook e where e.trnDate <= :trnDate order by e.id desc")
     List<CashBook> findLastTransaction(Date trnDate);
 
+    @Query("SELECT e from CashBook e where e.trnDate > :trnDate order by e.id asc")
+    List<CashBook> findCashBookAfterGivenDate(Date trnDate);
+
 }

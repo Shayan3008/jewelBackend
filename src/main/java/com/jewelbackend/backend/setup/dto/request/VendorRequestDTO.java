@@ -8,4 +8,5 @@ public class VendorRequestDTO {
     String vendorName;
     Integer vendorHeaderId;
     String vendorHeaderName;
+    String cusCode;
 }

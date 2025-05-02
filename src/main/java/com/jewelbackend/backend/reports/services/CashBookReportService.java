@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.jewelbackend.backend.reports.services.pdf.dto.PdfPositionDTO;
 import com.jewelbackend.backend.reports.services.pdf.dto.TableStyleDTO;
@@ -58,15 +56,15 @@ public class CashBookReportService extends BaseReport {
     public byte[] generateReport(Map<String, String> parameters, String format, String reportName)
             throws EmptyReportException, IOException, ParseException {
         CriteriaFilter<CashBook> criteriaFilter = new CriteriaFilter<>();
-        List<CashBook> currencyTransactions = criteriaFilter.getEntitiesByCriteriaWithSorting(CashBook.class,
-                parameters, entityManager, "trnDate");
+        List<CashBook> cashBooks = criteriaFilter.getEntitiesByCriteriaWithSorting(CashBook.class,
+                parameters, entityManager, List.of("trnDate", "trnType"));
 
         if (format.equals("pdf"))
-            return generatePdf(parameters, currencyTransactions);
+            return generatePdf(parameters, cashBooks);
 
         // Create the header row
-        List<String> headers = Arrays.asList("Transaction Type", "Amount",
-                "Transaction Date");
+        List<String> headers = Arrays.asList("Trn Type", "Amount",
+                "Trn Date");
         // Create a new Excel workbook
         Workbook workbook = new XSSFWorkbook();
 
@@ -99,27 +97,27 @@ public class CashBookReportService extends BaseReport {
         CellStyle numberStyle = workbook.createCellStyle();
         numberStyle.setAlignment(HorizontalAlignment.RIGHT);
         BigDecimal amount = BigDecimal.ZERO;
-        for (var i = 0; i < currencyTransactions.size(); i++) {
+        for (var i = 0; i < cashBooks.size(); i++) {
             Row dataRow = sheet.createRow(4 + i);
-            dataRow.createCell(1).setCellValue(currencyTransactions.get(i).getTrnType());
-            dataRow.createCell(2).setCellValue(currencyTransactions.get(i).getAmount().toString());
-            dataRow.createCell(3).setCellValue(currencyTransactions.get(i).getTrnDate());
-            amount = amount.add(currencyTransactions.get(i).getAmount());
+            dataRow.createCell(1).setCellValue(cashBooks.get(i).getTrnType());
+            dataRow.createCell(2).setCellValue(cashBooks.get(i).getAmount().toString());
+            dataRow.createCell(3).setCellValue(cashBooks.get(i).getTrnDate());
+            amount = amount.add(cashBooks.get(i).getAmount());
         }
 
         if (parameters.containsKey("trnType")) {
-            Row totalRow = sheet.createRow(5 + currencyTransactions.size());
+            Row totalRow = sheet.createRow(5 + cashBooks.size());
             totalRow.createCell(2).setCellValue("Total Amount");
             totalRow.createCell(3).setCellValue(amount.toString());
 
         } else {
-            Row saleRow = sheet.createRow(5 + currencyTransactions.size());
-            Row purchaseRow = sheet.createRow(6 + currencyTransactions.size());
-            Row totalRow = sheet.createRow(7 + currencyTransactions.size());
+            Row saleRow = sheet.createRow(5 + cashBooks.size());
+            Row purchaseRow = sheet.createRow(6 + cashBooks.size());
+            Row totalRow = sheet.createRow(7 + cashBooks.size());
             BigDecimal sale = BigDecimal.ZERO;
             BigDecimal purchase = BigDecimal.ZERO;
 
-            for (var transaction : currencyTransactions) {
+            for (var transaction : cashBooks) {
                 if (transaction.getTrnType().equals(Constants.SALE_CASH)) {
                     sale = sale.add(transaction.getAmount());
                 } else {
@@ -151,15 +149,20 @@ public class CashBookReportService extends BaseReport {
 
     public byte[] generatePdf(Map<String, String> parameters, List<CashBook> cashBooks) throws IOException, ParseException {
 
+        var totalDebit = BigDecimal.ZERO;
+        var totalCredit = BigDecimal.ZERO;
         PDDocument pdDocument = new PDDocument();
         PDPage page1 = new PDPage(PDRectangle.A4);
         pdDocument.addPage(page1);
 //      Get Opening Balance
-        String openingBalance = cashBooks.get(0).getOpeningBalance().toString();
+        CashBook lowestIdObject = cashBooks.stream()
+                .min(Comparator.comparingInt(CashBook::getId))
+                .orElseThrow();
+        String openingBalance = lowestIdObject.getOpeningBalance().toString();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
         int pageWidth = (int) page1.getMediaBox().getWidth();
         int pageHeight = (int) page1.getMediaBox().getHeight();
-        int cellSize = (pageWidth / 5) - 10;
+        int cellSize = (pageWidth / 5) - 15;
         PDPageContentStream pdPageContentStream = new PDPageContentStream(pdDocument, page1);
         PdfPositionDTO pdfPositionDTO = new PdfPositionDTO();
         generateHeader(pdPageContentStream, pageWidth, pageHeight, "Cashbook Transactions");
@@ -167,9 +170,9 @@ public class CashBookReportService extends BaseReport {
         pdfPositionDTO.setX(10);
         pdfPositionDTO.setY(pageHeight - 60);
         TextStyleDTO openingBalanceTextStyle = new TextStyleDTO(12, 12.5f, pdfPositionDTO, "Opening Balance: " + openingBalance, new PDType1Font(Standard14Fonts.FontName.TIMES_BOLD), Color.BLACK);
-        getPdfTextUtil().addTextToPage(String.format("Opening Balance for %s : %s", parameters.get("trnDateLess"), openingBalance), openingBalanceTextStyle, pdPageContentStream);
+        getPdfTextUtil().addTextToPage(String.format("Opening Balance for %s : %s", parameters.get("trnDate<"), openingBalance), openingBalanceTextStyle, pdPageContentStream);
 //       Create table
-        int[] cellWidths = {cellSize, cellSize, cellSize, cellSize, cellSize};
+        int[] cellWidths = {cellSize - 20, cellSize - 20, cellSize - 10, cellSize, cellSize + 50};
         pdfPositionDTO.setX(20);
         pdfPositionDTO.setY(pageHeight - 120);
         TextStyleDTO tableTextStyleDTO = new TextStyleDTO(11, 12.5f, pdfPositionDTO, "", new PDType1Font(Standard14Fonts.FontName.HELVETICA), Color.BLACK);
@@ -180,32 +183,32 @@ public class CashBookReportService extends BaseReport {
         tableStyleDTO.setXInitialPosition(20);
         tableStyleDTO.setFillColor(Color.WHITE);
         tableStyleDTO.setTextStyleDTO(tableTextStyleDTO);
-        getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Transaction Type", false);
-        getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Transaction Date", false);
+        getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Trn Type", false);
+        getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Trn Date", false);
         getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Amount", false);
         getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Starting Amount", false);
-        getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Final Amount", false);
-        int rowHeight = 40;
+        getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Description", false);
+        int rowHeight = 22;
         int pageHeight1 = pageHeight - 120;
         int i = 1;
-        int totalPages = (int) Math.ceil(cashBooks.size() / 16.0);
+        int totalPages = (int) Math.ceil(cashBooks.size() / 30.0);
         for (var cashBook : cashBooks) {
-            if (i % 16 == 0) {
+            if (i % 30 == 0) {
                 pdPageContentStream = changePDFPage(i, pdfPositionDTO, totalPages, pdPageContentStream, pdDocument);
                 pdfPositionDTO.setX(20);
-                pdfPositionDTO.setY(pageHeight - 120);
+                pdfPositionDTO.setY(pageHeight - 100);
                 tableStyleDTO.setColWidths(cellWidths);
                 tableStyleDTO.setColPosition(0);
                 tableStyleDTO.setCellHeight(30);
                 tableStyleDTO.setXInitialPosition(20);
                 tableStyleDTO.setFillColor(Color.WHITE);
                 tableStyleDTO.setTextStyleDTO(tableTextStyleDTO);
-                getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Transaction Type", false);
-                getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Transaction Date", false);
+                getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Trn Type", false);
+                getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Trn Date", false);
                 getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Amount", false);
                 getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Starting Amount", false);
-                getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Final Amount", false);
-                pageHeight1 = pageHeight - 120;
+                getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Description", false);
+                pageHeight1 = pageHeight - 100;
             }
             pageHeight1 -= rowHeight;
             pdfPositionDTO.setY(pageHeight1);
@@ -216,21 +219,65 @@ public class CashBookReportService extends BaseReport {
             getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, sdf.format(cashBook.getTrnDate()), false);
             getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, cashBook.getAmount().toString(), true);
             getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, cashBook.getOpeningBalance().toString(), true);
-            if (cashBook.getTrnType().equals(Constants.SALE_CASH)) {
-                tableTextStyleDTO.setColor(Color.GREEN);
-                tableStyleDTO.setTextStyleDTO(tableTextStyleDTO);
-                getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, cashBook.getFinalBalance().toString(), true);
+            if (cashBook.getTrnType().equals(Constants.PURCHASE_CASH)) {
+                totalDebit = totalDebit.add(cashBook.getAmount());
             } else {
-                tableTextStyleDTO.setColor(Color.RED);
-                tableStyleDTO.setTextStyleDTO(tableTextStyleDTO);
-                getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, cashBook.getFinalBalance().toString(), true);
-
+                totalCredit = totalCredit.add(cashBook.getAmount());
             }
             tableTextStyleDTO.setColor(Color.BLACK);
             tableStyleDTO.setTextStyleDTO(tableTextStyleDTO);
+            getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, cashBook.getDescription() == null ? "" : cashBook.getDescription(), false);
+            tableStyleDTO.setTextStyleDTO(tableTextStyleDTO);
             i += 1;
         }
-        int pageNo = (int) Math.ceil(i / 16.0);
+        if (pageHeight1 < 190) {
+            pdPageContentStream = changePDFPage(i, pdfPositionDTO, totalPages, pdPageContentStream, pdDocument);
+//            this.ledgerHeader(pdDocument, pdPageContentStream, pageWidth, pageHeight, pdfPositionDTO, vendorName, vendorNameTextStyle, tableStyleDTO);
+            pageHeight1 = pageHeight - 20;
+            pdfPositionDTO.setX(20);
+            pageHeight1 = pageHeight1 - 20;
+            pdfPositionDTO.setY(pageHeight1);
+            getPdfTextUtil().addTextToPage("Debit Amount: Rs " + totalDebit.toString(), openingBalanceTextStyle, pdPageContentStream);
+            pageHeight1 = pageHeight1 - 20;
+            pdfPositionDTO.setY(pageHeight1);
+            getPdfTextUtil().addTextToPage("Total Credit Cash Amount: Rs " + totalCredit.toString(), openingBalanceTextStyle, pdPageContentStream);
+            pageHeight1 = pageHeight1 - 20;
+            pdfPositionDTO.setY(pageHeight1);
+            totalDebit = totalDebit.add(new BigDecimal(openingBalance));
+            if (totalCredit.compareTo(totalDebit) > 0)
+                openingBalanceTextStyle.setColor(Color.RED);
+            else
+                openingBalanceTextStyle.setColor(Color.GREEN);
+            getPdfTextUtil().addTextToPage("Closing Balance : " + totalCredit.subtract(totalDebit).abs(), openingBalanceTextStyle, pdPageContentStream);
+
+            pdfPositionDTO.setX(10);
+            pdfPositionDTO.setY(20);
+            openingBalanceTextStyle.setPdfPositionDTO(pdfPositionDTO);
+        } else {
+            pdfPositionDTO.setX(20);
+            pageHeight1 = pageHeight1 - 20;
+            pdfPositionDTO.setY(pageHeight1);
+            openingBalanceTextStyle.setPdfPositionDTO(pdfPositionDTO);
+            getPdfTextUtil().addTextToPage("Total Debit Cash: Rs " + totalDebit.toString(), openingBalanceTextStyle, pdPageContentStream);
+            pageHeight1 = pageHeight1 - 20;
+            pdfPositionDTO.setY(pageHeight1);
+            openingBalanceTextStyle.setPdfPositionDTO(pdfPositionDTO);
+            getPdfTextUtil().addTextToPage("Total Credit Cash Amount: Rs " + totalCredit.toString(), openingBalanceTextStyle, pdPageContentStream);
+            pageHeight1 = pageHeight1 - 20;
+            pdfPositionDTO.setY(pageHeight1);
+            openingBalanceTextStyle.setPdfPositionDTO(pdfPositionDTO);
+            totalDebit = totalDebit.add(new BigDecimal(openingBalance));
+            if (totalCredit.compareTo(totalDebit) > 0)
+                openingBalanceTextStyle.setColor(Color.RED);
+            else
+                openingBalanceTextStyle.setColor(Color.GREEN);
+            getPdfTextUtil().addTextToPage("Closing Balance : " + totalCredit.subtract(totalDebit).abs(), openingBalanceTextStyle, pdPageContentStream);
+
+            pdfPositionDTO.setX(10);
+            pdfPositionDTO.setY(20);
+            openingBalanceTextStyle.setPdfPositionDTO(pdfPositionDTO);
+        }
+        int pageNo = (int) Math.ceil(i / 30.0);
         TextStyleDTO headerTextStyle = new TextStyleDTO(16, 14.5f, pdfPositionDTO, "", new PDType1Font(Standard14Fonts.FontName.COURIER_BOLD), Color.BLACK);
         headerTextStyle.setFontSize(8);
         pdfPositionDTO.setX(10);

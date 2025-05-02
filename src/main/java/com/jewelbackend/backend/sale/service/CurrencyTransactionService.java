@@ -90,7 +90,7 @@ public class CurrencyTransactionService extends BaseService {
 
     public void deleteCurrencyTransaction(int id) throws AlreadyPresentException {
         Optional<CurrencyTransaction> currencyTransaction =  getDaoFactory().getCurrencyTransactionDao().findById(id);
-        if(!currencyTransaction.isPresent())
+        if(currencyTransaction.isEmpty())
             throw new AlreadyPresentException("Currency transaction is not present");
         getDaoFactory().getCurrencyTransactionDao().delete(currencyTransaction.get());
     }

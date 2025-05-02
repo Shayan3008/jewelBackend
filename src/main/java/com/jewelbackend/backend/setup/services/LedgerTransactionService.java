@@ -37,26 +37,15 @@ public class LedgerTransactionService extends BaseService {
             if (ledgerTransactionDto.getGoldWeight() == null) {
                 ledgerTransaction.setCredit(ledgerTransactionDto.getCredit());
             } else {
-                LedgerTransaction ledgerTransaction1 = this.daoFactory.getLedgerTransactionDao().getCreditGoldWeight();
-                BigDecimal goldWeight = null;
-                if (ledgerTransaction1 != null)
-                    goldWeight = ledgerTransaction1.getCreditGoldWeight().subtract(ledgerTransactionDto.getGoldWeight());
-                else
-                    goldWeight = ledgerTransactionDto.getGoldWeight();
-                ledgerTransaction.setCreditGoldWeight(goldWeight);
+
+                ledgerTransaction.setCreditGoldWeight(ledgerTransactionDto.getGoldWeight());
                 ledgerTransaction2.setDebit(ledgerTransactionDto.getCredit());
             }
         } else {
             if (ledgerTransactionDto.getGoldWeight() == null) {
                 ledgerTransaction.setDebit(ledgerTransactionDto.getDebit());
             } else {
-                LedgerTransaction ledgerTransaction1 = this.daoFactory.getLedgerTransactionDao().getDebitGoldWeight();
-                BigDecimal goldWeight = null;
-                if (ledgerTransaction1 != null)
-                    goldWeight = ledgerTransaction1.getDebitGoldWeight().add(ledgerTransactionDto.getGoldWeight());
-                else
-                    goldWeight = ledgerTransactionDto.getGoldWeight();
-                ledgerTransaction.setDebitGoldWeight(goldWeight);
+                ledgerTransaction.setDebitGoldWeight(ledgerTransactionDto.getGoldWeight());
                 ledgerTransaction2.setCredit(ledgerTransactionDto.getDebit());
             }
         }

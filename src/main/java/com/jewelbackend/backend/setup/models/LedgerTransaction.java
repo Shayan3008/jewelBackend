@@ -3,13 +3,16 @@ package com.jewelbackend.backend.setup.models;
 import com.jewelbackend.backend.common.constants.Constants;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
 @Table(name = "LEDGER_TRANSACTION",schema = Constants.SETUPSCHEMA)
-@Data
+@Getter
+@Setter
 public class LedgerTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

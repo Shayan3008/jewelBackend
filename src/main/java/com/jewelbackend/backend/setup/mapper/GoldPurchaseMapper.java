@@ -9,6 +9,8 @@ import com.jewelbackend.backend.setup.dto.response.GoldPurchaseResponseDto;
 import com.jewelbackend.backend.setup.models.CashBook;
 import com.jewelbackend.backend.setup.models.GoldPurchase;
 
+import java.math.BigDecimal;
+
 @Component
 public class GoldPurchaseMapper {
 
@@ -42,7 +44,12 @@ public class GoldPurchaseMapper {
         CashBook cashBook = new CashBook();
         cashBook.setAmount(goldPurchase.getAmount());
         cashBook.setTrnDate(goldPurchase.getPurchaseDate());
-        cashBook.setTrnType(goldPurchase.getTrnType());
+        if (goldPurchase.getGoldWeight() == null || goldPurchase.getGoldWeight().compareTo(BigDecimal.ZERO) <= 0) {
+            cashBook.setTrnType(goldPurchase.getTrnType());
+        } else {
+            cashBook.setTrnType(goldPurchase.getTrnType().equalsIgnoreCase(Constants.PURCHASE_CASH) ? Constants.SALE_CASH : Constants.PURCHASE_CASH);
+        }
+        cashBook.setDescription(String.valueOf("Ledger " + goldPurchase.getVendor().getName()));
         return cashBook;
     }
 

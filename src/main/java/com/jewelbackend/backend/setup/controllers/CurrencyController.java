@@ -1,7 +1,11 @@
 package com.jewelbackend.backend.setup.controllers;
 
+import java.text.ParseException;
 import java.util.List;
 
+import com.jewelbackend.backend.setup.models.Currency;
+import com.jewelbackend.backend.common.config.HelperUtils;
+import com.jewelbackend.backend.common.criteriafilters.CriteriaFilter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,19 +33,26 @@ public class CurrencyController {
 
     @GetMapping("")
     ResponseEntity<CommonResponse<List<CurrencyResponseDTO>>> getAllCurrenys(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size
-    ) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") int size,
+            @RequestParam(defaultValue = "") String search
+    ) throws ParseException {
         List<CurrencyResponseDTO> currencyResponseDTOs = this.currencyService
-                .getAllCurrency(size, page);
-        return ResponseEntity.ok()
-                .body(new CommonResponse<>("All Currency s", 200, currencyResponseDTOs,
-                        this.currencyService.getDaoFactory().getCurrencyDao().count()));
+                .getAllCurrency(size, page, search);
+        if (search.isBlank())
+            return ResponseEntity.ok()
+                    .body(new CommonResponse<>("All Currency s", 200, currencyResponseDTOs,
+                            this.currencyService.getDaoFactory().getCurrencyDao().count()));
+        else {
+            CriteriaFilter<Currency> criteriaFilter = new CriteriaFilter<>();
+            return ResponseEntity.ok().body(new CommonResponse<>("All Currency s", 200, currencyResponseDTOs,criteriaFilter.getQueryCount(Currency.class, HelperUtils.listToMap(search), currencyService.getEntityManager())));
+        }
+
     }
 
     @PostMapping("/save")
     public ResponseEntity<CommonResponse<CurrencyResponseDTO>> saveCurrency(
-            @RequestBody CurrencyRequestDTO currencyRequestDTO){
+            @RequestBody CurrencyRequestDTO currencyRequestDTO) {
         CurrencyResponseDTO currencyResponseDTO = this.currencyService
                 .saveCurrency(currencyRequestDTO);
         return ResponseEntity.ok()

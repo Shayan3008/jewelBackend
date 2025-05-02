@@ -9,9 +9,11 @@ SELECT  [dt]
       ,[SENDTO]
   FROM [rjcJeweler].[dbo].[additem]
 
-select cat,itemid,qty,tweight,dt,detail from [rjcJeweler].[dbo].[additem];
+select cat,itemid,qty,tweight,dt,detail from
+ [rjcJeweler].[dbo].[additem];
 
-select itemid, cat, tweight,Supplier1,karat,qty from [rjcJeweler].[dbo].[GItem];
+select itemid, cat, tweight,
+Supplier1,karat,qty from [rjcJeweler].[dbo].[GItem];
 
 select * from [rjcJeweler].[dbo].[GItem];
 

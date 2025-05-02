@@ -105,7 +105,7 @@ public class ItemController {
 
     @GetMapping("/upload-image")
     ResponseEntity<String> uploadImageToDir() throws IOException {
-        this.itemService.uploadItemImageToDir();
+        this.itemService.uploadItemImageToDir(null);
         return ResponseEntity.ok().body("Image uploaded successfully");
     }
 

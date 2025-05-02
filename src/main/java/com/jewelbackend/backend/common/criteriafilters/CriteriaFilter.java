@@ -37,10 +37,10 @@ public class CriteriaFilter<E> {
     }
 
     public List<E> getEntitiesByCriteriaWithSorting(Class<E> entityClass, Map<String, String> map, EntityManager entityManager,
-                                                    String sortingColumn)
+                                                    List<String> sortingColumns)
             throws ParseException {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<E> criteriaQuery = applyQuery(entityClass, map, entityManager, criteriaBuilder);
+        CriteriaQuery<E> criteriaQuery = applyQuery(entityClass, map, entityManager, criteriaBuilder,sortingColumns);
         return entityManager.createQuery(criteriaQuery).getResultList();
 
 
@@ -101,6 +101,60 @@ public class CriteriaFilter<E> {
         criteriaQuery.where(combinedPredicate);
         criteriaQuery.orderBy(criteriaBuilder.asc(root.get("id")));
 
+        return criteriaQuery;
+    }
+
+    private CriteriaQuery<E> applyQuery(Class<?> entityClass, Map<String, String> map, EntityManager entityManager, CriteriaBuilder criteriaBuilder,List<String> sortingColumns) throws ParseException {
+        CriteriaQuery<E> criteriaQuery = (CriteriaQuery<E>) criteriaBuilder.createQuery(entityClass);
+        Root<E> root = (Root<E>) criteriaQuery.from(entityClass);
+        List<Predicate> orPredicates = new ArrayList<>();
+        List<Predicate> andPredicates = new ArrayList<>();
+        for (var map1 : map.entrySet()) {
+            Class<?> javaType = null;
+            if (map1.getKey().contains(".")) {
+                var keys = map1.getKey().split("\\.");
+                CriteriaFilter<?> javaTypeCriteriaFilter = new CriteriaFilter<>();
+                Join<E, ?> join = root.join(keys[0], JoinType.INNER);
+                orPredicates.add(criteriaBuilder.equal(join.get(keys[1]), map1.getValue()));
+            } else {
+                javaType = getFieldType(entityClass, map1.getKey(), entityManager).getJavaType();
+                if (javaType == String.class) {
+                    orPredicates.add(criteriaBuilder.like(root.get(map1.getKey()), "%" + map1.getValue() + "%"));
+                } else if (javaType == Date.class || javaType == Timestamp.class) {
+                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy");
+                    if (map1.getKey().contains("<")) {
+                        var value = map1.getValue();
+                        Date date = simpleDateFormat.parse(value);
+                        andPredicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(map1.getKey().substring(0, map1.getKey().length() - 1)), date));
+                    } else if (map1.getKey().contains(">")) {
+                        var value = map1.getValue();
+                        Date date = simpleDateFormat.parse(value);
+                        andPredicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(map1.getKey().substring(0, map1.getKey().length() - 1)), date));
+                    } else {
+                        Date date = simpleDateFormat.parse(map1.getValue());
+                        orPredicates.add(criteriaBuilder.equal(root.get(map1.getKey()), date));
+                    }
+                }
+
+            }
+
+        }
+        Predicate combinedPredicate = null;
+        if (!orPredicates.isEmpty() && !andPredicates.isEmpty()) {
+            combinedPredicate = criteriaBuilder.and(criteriaBuilder.or(orPredicates.toArray(new Predicate[0])), criteriaBuilder.and(andPredicates.toArray(new Predicate[0])));
+        } else if (!orPredicates.isEmpty()) {
+            combinedPredicate = criteriaBuilder.or(orPredicates.toArray(new Predicate[0]));
+        } else if (!andPredicates.isEmpty()) {
+            combinedPredicate = criteriaBuilder.and(andPredicates.toArray(new Predicate[0]));
+        }
+
+
+        criteriaQuery.where(combinedPredicate);
+        List<Order> orders = new ArrayList<>();
+        for(var column:sortingColumns){
+            orders.add(criteriaBuilder.asc(root.get(column)));
+        }
+        criteriaQuery.orderBy(orders);
         return criteriaQuery;
     }
 

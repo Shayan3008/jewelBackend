@@ -2,6 +2,7 @@ package com.jewelbackend.backend.sale.mapper;
 
 import java.util.Date;
 
+import com.jewelbackend.backend.common.constants.Constants;
 import org.springframework.stereotype.Component;
 
 import com.jewelbackend.backend.sale.dto.request.CurrencyTransactionRequestDTO;
@@ -19,7 +20,7 @@ public class CurrencyTransactionMapper {
         currencyTransaction.setExchangeRate(currencyTransactionRequestDTO.getExchangeRate());
         currencyTransaction.setDescription(currencyTransactionRequestDTO.getDescription());
         currencyTransaction.setQty(currencyTransactionRequestDTO.getQty());
-        currencyTransaction.setTransactionDate(new Date());
+        currencyTransaction.setTransactionDate(currencyTransactionRequestDTO.getTrnDate());
         return currencyTransaction;
     }
 
@@ -37,11 +38,12 @@ public class CurrencyTransactionMapper {
         return currencyTransactionResponseDTO;
     }
 
-    public CashBook currencyTransactionToCashBook(CurrencyTransaction currencyTransaction){
+    public CashBook currencyTransactionToCashBook(CurrencyTransaction currencyTransaction) {
         CashBook cashBook = new CashBook();
         cashBook.setTrnDate(currencyTransaction.getTransactionDate());
-        cashBook.setTrnType(currencyTransaction.getTrnType());
+        cashBook.setTrnType(currencyTransaction.getTrnType().equalsIgnoreCase(Constants.SALE_CASH) ? Constants.PURCHASE_CASH : Constants.SALE_CASH);
         cashBook.setAmount(currencyTransaction.getAmount());
+        cashBook.setDescription(String.valueOf("Currency  for " + currencyTransaction.getCurrency().getCurrencyName()));
         return cashBook;
     }
 }

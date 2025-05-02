@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,7 +48,10 @@ public class DetailedCategoryReportService extends BaseReport {
         Category category = this.getDaoFactory().getCategoryDao().findById(id).orElseThrow(() -> new EmptyReportException("Category not found"));
         List<Item> items = category.getItems();
         if (format.equals("PDF")) {
-            items = items.stream().filter(e -> (e.getNetWeight() != null && e.getNetWeight().compareTo(BigDecimal.ZERO) > 0)).collect(Collectors.toList());
+            items = items.stream().filter(e -> ((e.getNetWeight() != null && e.getNetWeight().compareTo(BigDecimal.ZERO) > 0) && (e.getRemainingNetWeight() != null && e.getRemainingNetWeight().compareTo(BigDecimal.ZERO) > 0))).collect(Collectors.toList());
+
+            items = sortItemByDesignNo(items);
+
             if (category.getMetalType().getMetalName().equalsIgnoreCase("DIAMOND")) {
                 return generateDetailedCategoryReportForDiamond(category, items);
             }
@@ -69,7 +73,7 @@ public class DetailedCategoryReportService extends BaseReport {
         PDPageContentStream pdPageContentStream = new PDPageContentStream(pdDocument, page1);
         PdfPositionDTO pdfPositionDTO = new PdfPositionDTO();
         String vendorName = category.getCategoryName();
-        int[] cellWidths = {cellSize, cellSize, cellSize, cellSize, cellSize, cellSize+60};
+        int[] cellWidths = {cellSize, cellSize, cellSize, cellSize, cellSize, cellSize + 60};
         TextStyleDTO vendorNameTextStyle = new TextStyleDTO(12, 12.5f, pdfPositionDTO, "Vendor Name: " + vendorName, new PDType1Font(Standard14Fonts.FontName.TIMES_BOLD), Color.BLACK);
         TextStyleDTO tableTextStyleDTO = new TextStyleDTO(11, 12.5f, pdfPositionDTO, "",
                 new PDType1Font(Standard14Fonts.FontName.HELVETICA), Color.BLACK);
@@ -226,6 +230,10 @@ public class DetailedCategoryReportService extends BaseReport {
         getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Net Weight", false);
         getPdfTableUtil().addCell(tableStyleDTO, pdPageContentStream, "Diamond Weight", false);
 
+    }
+
+    public List<Item> sortItemByDesignNo(List<Item> items) {
+        return items.stream().sorted(Comparator.comparingInt(e -> Integer.parseInt(e.getDesignNo().replaceAll("[^0-9]", "")))).collect(Collectors.toList());
     }
 
 }
